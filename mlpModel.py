@@ -28,22 +28,21 @@ def training(input, wanted):
     learning_rate = 0.00001
     optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate)
 
-    epochs = 1000
+    epochs = 1000000
+    input = Variable(torch.from_numpy(np.array(input, dtype=np.float32))).cuda()
+    wanted = Variable(torch.from_numpy(np.array(wanted, dtype=np.float32))).cuda()
 
     for epoch in range(epochs):
         epoch += 1
         loss_list = []
         for step in range(input.shape[0]):
             step += 1
-            value_in = input[:, step]
-            value_res = wanted[:, step]
+            input_var = input[:, step]
+            wanted_var = wanted[:, step]
 
-            np_ft32_in = np.array(value_in, dtype=np.float32)
-            np_ft32_res = np.array(value_res, dtype=np.float32)
-            input_var = Variable(torch.from_numpy(np_ft32_in)).cuda()
-            wanted_var = Variable(torch.from_numpy(np_ft32_res)).cuda()
             optimizer.zero_grad()
             output_model = model(input_var)
+
             loss = criterion(output_model,wanted_var)
             loss.backward()
             loss_list.append(loss.data.cpu().numpy())
@@ -51,7 +50,8 @@ def training(input, wanted):
             #print('step {}, loss {}'.format(step, loss.data))
         loss_np = np.array(loss_list)
         print('epoch {}, loss {}'.format(epoch, np.average(loss_np)))
-
+        if (epoch%100)==99 :
+            torch.save(model,"MLP1-"+str(epoch))
     return model
 
 
