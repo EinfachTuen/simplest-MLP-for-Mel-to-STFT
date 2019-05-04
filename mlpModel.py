@@ -10,9 +10,9 @@ class LinearRegressionModel(nn.Module):
         super(LinearRegressionModel,self).__init__()
         print("input_dim", input_dim)
         print("output_dim", output_dim)
-        self.linear1 = nn.Linear(input_dim, output_dim*3)
-        self.linear2 = nn.Linear(output_dim*3, output_dim*3)
-        self.linear3 = nn.Linear(output_dim*3, output_dim)
+        self.linear1 = nn.Linear(input_dim, output_dim*10)
+        self.linear2 = nn.Linear(output_dim*10, output_dim*10)
+        self.linear3 = nn.Linear(output_dim*10, output_dim)
 
     def forward(self, x):
         x = f.relu(self.linear1(x))
@@ -25,13 +25,14 @@ def training(input, wanted):
     model = LinearRegressionModel(input.shape[0], wanted.shape[0]).cuda()
     criterion = nn.MSELoss()
 
-    learning_rate = 0.00005
+    learning_rate = 0.00001
     optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate)
 
     epochs = 1000
 
     for epoch in range(epochs):
         epoch += 1
+        loss_list = []
         for step in range(input.shape[0]):
             step += 1
             value_in = input[:, step]
@@ -45,9 +46,11 @@ def training(input, wanted):
             output_model = model(input_var)
             loss = criterion(output_model,wanted_var)
             loss.backward()
+            loss_list.append(loss.data.cpu().numpy())
             optimizer.step()
             #print('step {}, loss {}'.format(step, loss.data))
-        print('epoch {}, loss {}'.format(epoch, loss.data))
+        loss_np = np.array(loss_list)
+        print('epoch {}, loss {}'.format(epoch, np.average(loss_np)))
 
     return model
 
