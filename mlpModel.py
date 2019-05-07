@@ -24,7 +24,7 @@ class LinearRegressionModel(nn.Module):
 def generateSTFTFromMel(mel_input, model):
     mel_input = Variable(torch.from_numpy(np.array(mel_input, dtype=np.float32)))
     stft = []
-    for step in range(mel_input.shape[1]):
+    for step in range(mel_input.shape[0]):
         result = model(mel_input[:, step])
         step_result = result.detach().numpy()
         print(step_result.shape)
@@ -42,8 +42,8 @@ def training(input, wanted):
     learning_rate = 0.00001
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     input_asNumpy = np.array(input, dtype=np.float32)
-    input_reshape_test = np.reshape(input_asNumpy,(3,input.shape[1],-1))
-    print(input_reshape_test.shape)
+   # input_reshape_test = np.reshape(input_asNumpy,(3,input.shape[0],-1))
+   # print(input_reshape_test.shape)
     epochs = 1000000
     input = Variable(torch.from_numpy(input_asNumpy)).cuda()
     wanted = Variable(torch.from_numpy(np.array(wanted, dtype=np.float32))).cuda()
@@ -51,7 +51,9 @@ def training(input, wanted):
     for epoch in range(epochs):
         epoch += 1
         loss_list = []
-        for step in range(input.shape[1]):
+
+        #TODO: here is some stupid dimension error shape[0] shouldnt be working insted shape[1] to be debugged
+        for step in range(input.shape[0]):
             step += 1
             input_var = input[:, step]
             wanted_var = wanted[:, step]
