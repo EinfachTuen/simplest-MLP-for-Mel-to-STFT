@@ -34,19 +34,30 @@ def generateSTFTFromMel(mel_input, model):
     print(stft.shape)
     return stft
 
-def prepareInput(input,amount_timesteps_at_once):
-    original_timesteps = input.shape[1]
+def prepareInput(input,amount_timesteps_before_and_after):
     input_after_insertion = input
-    for incrementSize in range(amount_timesteps_at_once):
+    for incrementSize in range(amount_timesteps_before_and_after):
+        print(incrementSize)
         increaseSizeWithZeros = np.zeros(input.shape[0])
         input_after_insertion = np.insert(input_after_insertion, -1, increaseSizeWithZeros, axis=1)
         input_after_insertion = np.insert(input_after_insertion, 0, increaseSizeWithZeros, axis=1)
     #TODO: unfinished
-    for element in range(original_timesteps):
+    elements =[]
+    timesteps_per_run = amount_timesteps_before_and_after * 2 + 1
+    print("timesteps_per_run",timesteps_per_run)
+    for element in range(input_after_insertion.shape[1]):
         model_input_array = []
-        for step in range(amount_timesteps_at_once):
-            model_input_array = model_input_array.insert(input[:, element],-1)
-
+        print("element",element)
+        print(input_after_insertion.shape[1]-amount_timesteps_before_and_after-1)
+        if amount_timesteps_before_and_after-1 < element < (input_after_insertion.shape[1]-amount_timesteps_before_and_after*2):
+            for step in range(timesteps_per_run):
+                actual_position = element+step
+                print(actual_position, input_after_insertion.shape)
+                model_input_array.append(input_after_insertion[:, actual_position])
+            elements.append(model_input_array)
+    elements = np.asarray(elements)
+    print("elements shape",elements.shape)
+    return np.asarray(elements)
 
 
 
