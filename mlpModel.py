@@ -41,7 +41,7 @@ def prepareInput(input,amount_timesteps_at_once):
         increaseSizeWithZeros = np.zeros(input.shape[0])
         input_after_insertion = np.insert(input_after_insertion, -1, increaseSizeWithZeros, axis=1)
         input_after_insertion = np.insert(input_after_insertion, 0, increaseSizeWithZeros, axis=1)
-
+    #TODO: unfinished
     for element in range(original_timesteps):
         model_input_array = []
         for step in range(amount_timesteps_at_once):
