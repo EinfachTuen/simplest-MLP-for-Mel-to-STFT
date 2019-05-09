@@ -49,7 +49,7 @@ def prepareInput(input,amount_timesteps_before_and_after):
         model_input_array = []
         print("element",element)
         print(input_after_insertion.shape[1]-amount_timesteps_before_and_after-1)
-        if amount_timesteps_before_and_after-1 < element < (input_after_insertion.shape[1]-amount_timesteps_before_and_after*2):
+        if element < (input_after_insertion.shape[1]-amount_timesteps_before_and_after*2):
             for step in range(timesteps_per_run):
                 actual_position = element+step
                 print(actual_position, input_after_insertion.shape)
@@ -57,17 +57,14 @@ def prepareInput(input,amount_timesteps_before_and_after):
             elements.append(model_input_array)
     elements = np.asarray(elements)
     print("elements shape",elements.shape)
-    return np.asarray(elements)
-
-
+    return Variable(torch.from_numpy(elements)).cuda()
 
 def training(input, wanted):
     steps_before_and_after = 5
     input_asnumpy = np.array(input, dtype=np.float32)
     inputTimeLength = input_asnumpy.shape[1]
     preparedInput = prepareInput(input_asnumpy,steps_before_and_after)
-
-    model = LinearRegressionModel(input.shape[0]*steps_before_and_after, wanted.shape[0]).cuda()
+    model = LinearRegressionModel(preparedInput.shape[1]*preparedInput.shape[2], wanted.shape[0]).cuda()
     criterion = nn.MSELoss()
 
     learning_rate = 0.00001
@@ -77,15 +74,15 @@ def training(input, wanted):
    # print(input_reshape_test.shape)
     epochs = 1000000
 
-    input = Variable(torch.from_numpy(preparedInput)).cuda()
     wanted = Variable(torch.from_numpy(np.array(wanted, dtype=np.float32))).cuda()
 
     for epoch in range(epochs):
         epoch += 1
         loss_list = []
         for step in range(inputTimeLength):
-            input_var = input[:, step]
+            input_var = preparedInput[step].flatten()
 
+           # print(input_var)
             wanted_var = wanted[:, step]
 
             optimizer.zero_grad()
