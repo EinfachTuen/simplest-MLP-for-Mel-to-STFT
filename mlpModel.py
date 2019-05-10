@@ -94,6 +94,8 @@ def training(input, wanted):
         np.random.shuffle(order_of_training_steps)
         loss_np = np.array(loss_list)
         print('epoch {}, loss {}'.format(epoch, np.average(loss_np)))
+        log_file = open('loss_log.txt', 'a')
+        log_file.write(str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
         if (epoch % 100) == 99:
             torch.save(model, "MLP1-w-shuffle" + str(epoch))
     return model
