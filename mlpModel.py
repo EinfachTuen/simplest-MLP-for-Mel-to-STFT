@@ -72,17 +72,16 @@ def training(input, wanted):
    # input_reshape_test = np.reshape(input_asnumpy,(3,input.shape[0],-1))
    # print(input_reshape_test.shape)
     epochs = 1000000
-
     wanted = Variable(torch.from_numpy(np.array(wanted, dtype=np.float32))).cuda()
-
+    order_of_training_steps = np.arange(inputTimeLength)
     for epoch in range(epochs):
         epoch += 1
         loss_list = []
         for step in range(inputTimeLength):
-            input_var = preparedInput[step].flatten()
+            input_var = preparedInput[order_of_training_steps[step]].flatten()
 
            # print(input_var)
-            wanted_var = wanted[:, step]
+            wanted_var = wanted[:, [order_of_training_steps[step]]]
 
             optimizer.zero_grad()
             output_model = model(input_var)
@@ -92,9 +91,9 @@ def training(input, wanted):
             loss_list.append(loss.data.cpu().numpy())
             optimizer.step()
             # print('step {}, loss {}'.format(step, loss.data))
-        np.random.shuffle(preparedInput)
+        np.random.shuffle(order_of_training_steps)
         loss_np = np.array(loss_list)
         print('epoch {}, loss {}'.format(epoch, np.average(loss_np)))
         if (epoch % 100) == 99:
-            torch.save(model, "MLP1-" + str(epoch))
+            torch.save(model, "MLP1-w-shuffle" + str(epoch))
     return model
