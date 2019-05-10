@@ -61,6 +61,7 @@ def training(input, wanted):
     criterion = nn.MSELoss()
 
     learning_rate = 0.0001
+    last_loss =9999999
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
    # input_reshape_test = np.reshape(input_asnumpy,(3,input.shape[0],-1))
@@ -87,11 +88,17 @@ def training(input, wanted):
             # print('step {}, loss {}'.format(step, loss.data))
         np.random.shuffle(order_of_training_steps)
         loss_np = np.array(loss_list)
-        print('epoch {}, loss {}'.format(epoch, np.average(loss_np)))
+        average_loss = np.average(loss_np)
+        print('epoch {}, loss {}'.format(epoch,average_loss))
 
         name= "MLP1-mightier"
         log_file = open('loss_log.txt', 'a')
         log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
         if (epoch % 100) == 99:
             torch.save(model, name + str(epoch))
+        if (epoch % 500) == 499:
+            if average_loss >= last_loss :
+                learning_rate *=-0.5
+                print("learning_rate changed to"+learning_rate)
+            last_loss = average_loss
     return model
