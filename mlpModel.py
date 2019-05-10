@@ -10,16 +10,10 @@ class LinearRegressionModel(nn.Module):
         super(LinearRegressionModel, self).__init__()
         print("input_dim", input_dim)
         print("output_dim", output_dim)
-        self.linear1 = nn.Linear(input_dim, input_dim * 10)
-        self.linear2 = nn.Linear(input_dim * 10, input_dim * 10)
-        self.linear3 = nn.Linear(input_dim * 10, input_dim * 10)
-        self.linear4 = nn.Linear(input_dim * 10, output_dim)
+        self.lstm = nn.LSTM(input_dim, output_dim)
 
     def forward(self, x):
-        x = f.relu(self.linear1(x))
-        x = f.relu(self.linear2(x))
-        x = f.relu(self.linear3(x))
-        out = f.relu(self.linear4(x))
+        out = self.lstm(x)
         return out
 
 def generateSTFTFromMel(mel_input, model):
