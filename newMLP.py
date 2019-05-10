@@ -11,10 +11,10 @@ class LinearRegressionModel(nn.Module):
         super(LinearRegressionModel, self).__init__()
         print("input_dim", input_dim)
         print("output_dim", output_dim)
-        self.linear1 = nn.Linear(input_dim, input_dim * 10)
-        self.linear2 = nn.Linear(input_dim * 10, input_dim * 10)
-        self.linear3 = nn.Linear(input_dim * 10, input_dim * 10)
-        self.linear4 = nn.Linear(input_dim * 10, output_dim)
+        self.linear1 = nn.Linear(input_dim, input_dim * 30)
+        self.linear2 = nn.Linear(input_dim * 30, input_dim * 30)
+        self.linear3 = nn.Linear(input_dim * 30, input_dim * 30)
+        self.linear4 = nn.Linear(input_dim * 30, output_dim)
 
     def forward(self, x):
         x = f.relu(self.linear1(x))
@@ -28,7 +28,7 @@ class DataPrep():
         mel_and_stft = self.loadMelAndStft()
         self.dataloader = DataLoader(mel_and_stft,
                                 batch_size=1,
-                                shuffle=True)
+                                shuffle=False)
 
     def loadMelAndStft(self):
         wav, sr = librosa.load("./inWav/arctic_indian_man16.wav")
@@ -69,6 +69,7 @@ class Training():
 
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
         criterion = nn.MSELoss()
+        last_loss = 999999
         for epoch in range(self.epochs):
             loss_list = []
             for i,(mel,stft) in enumerate(dataloader):
