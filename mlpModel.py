@@ -12,12 +12,14 @@ class LinearRegressionModel(nn.Module):
         print("output_dim", output_dim)
         self.linear1 = nn.Linear(input_dim, input_dim * 10)
         self.linear2 = nn.Linear(input_dim * 10, input_dim * 10)
-        self.linear3 = nn.Linear(input_dim * 10, output_dim)
+        self.linear3 = nn.Linear(input_dim * 10, input_dim * 10)
+        self.linear4 = nn.Linear(input_dim * 10, output_dim)
 
     def forward(self, x):
         x = f.relu(self.linear1(x))
         x = f.relu(self.linear2(x))
-        out = f.relu(self.linear3(x))
+        x = f.relu(self.linear3(x))
+        out = f.relu(self.linear4(x))
         return out
 
 def generateSTFTFromMel(mel_input, model):
@@ -60,7 +62,7 @@ def training(input, wanted):
     model = LinearRegressionModel(preparedInput.shape[1]*preparedInput.shape[2], wanted.shape[0]).cuda()
     criterion = nn.MSELoss()
 
-    learning_rate = 0.0001
+    learning_rate = 0.000005
     last_loss =9999999
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
@@ -91,12 +93,12 @@ def training(input, wanted):
         average_loss = np.average(loss_np)
         print('epoch {}, loss {}'.format(epoch,average_loss))
 
-        name= "MLP1-mightier"
+        name= "MLP1-mightier-v2"
         log_file = open('loss_log.txt', 'a')
         log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
         if (epoch % 100) == 99:
             torch.save(model, name + str(epoch))
-        if (epoch % 500) == 499:
+        if (epoch % 200) == 199:
             if average_loss >= last_loss :
                 learning_rate *=-0.5
                 print("learning_rate changed to"+learning_rate)
