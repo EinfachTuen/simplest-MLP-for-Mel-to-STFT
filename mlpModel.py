@@ -20,7 +20,6 @@ class LinearRegressionModel(nn.Module):
         out = f.relu(self.linear3(x))
         return out
 
-
 def generateSTFTFromMel(mel_input, model):
     mel_input = Variable(torch.from_numpy(np.array(mel_input, dtype=np.float32)))
     stft = []
@@ -93,7 +92,7 @@ def training(input, wanted):
             loss_list.append(loss.data.cpu().numpy())
             optimizer.step()
             # print('step {}, loss {}'.format(step, loss.data))
-
+        np.random.shuffle(preparedInput)
         loss_np = np.array(loss_list)
         print('epoch {}, loss {}'.format(epoch, np.average(loss_np)))
         if (epoch % 100) == 99:
