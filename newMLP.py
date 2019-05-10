@@ -85,7 +85,7 @@ class Training():
             average_loss = np.average(loss_np)
             print('epoch {}, loss {}'.format(epoch,average_loss))
 
-            name= "MLP1-mightier-v2"
+            name= "MLP1-refactored"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
             if (epoch % 100) == 99:
