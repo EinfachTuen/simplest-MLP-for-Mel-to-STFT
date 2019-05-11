@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
+import os
+from random import shuffle
 
 class LinearRegressionModel(nn.Module):
     def __init__(self, input_dim, output_dim):
@@ -28,14 +30,22 @@ class LinearRegressionModel(nn.Module):
         return out
 
 class DataPrep():
-    def __init__(self):
-        mel_and_stft = self.loadMelAndStft()
-        self.dataloader = DataLoader(mel_and_stft,
-                                batch_size=1,
-                                shuffle=True)
+    def loadFolder(foldername):
+        loaded_files = []
+        for filename in os.listdir(foldername):
+            loaded_files.append(DataPrep.loadFile(True,""+foldername+filename))
+            print("Path: "+foldername+filename)
+        return loaded_files
 
-    def loadMelAndStft(self):
-        wav, sr = librosa.load("./inWav/arctic_indian_man16.wav")
+    def loadFile(shuffle,filename):
+        mel_and_stft = DataPrep.loadMelAndStft(filename)
+        dataloader = DataLoader(mel_and_stft,
+                                batch_size=1,
+                                shuffle=shuffle)
+        return dataloader
+
+    def loadMelAndStft(filename):
+        wav, sr = librosa.load(filename)
         stft_in = np.abs(librosa.stft(wav)) ** 2
         mel_in = librosa.feature.melspectrogram(S=stft_in)
         stft_in = np.array(stft_in)
@@ -66,7 +76,7 @@ class DataPrep():
         return mel_and_stft
 
 class Training():
-    def __init__(self, dataloader):
+    def __init__(self, dataloaders):
         self.epochs = 100000
 
         learning_rate = 0.00001
@@ -77,16 +87,18 @@ class Training():
         last_loss = 999999
         for epoch in range(self.epochs):
             loss_list = []
-            for i,(mel,stft) in enumerate(dataloader):
-                mel = mel.cuda()
-                stft = stft.cuda()
-                optimizer.zero_grad()
-                output_model = model(mel)
-                loss = criterion(output_model, stft)
-                loss.backward()
-                loss_list.append(loss.data.cpu().numpy())
-                optimizer.step()
+            for dataloader in dataloaders:
+                for i,(mel,stft) in enumerate(dataloader):
+                    mel = mel.cuda()
+                    stft = stft.cuda()
+                    optimizer.zero_grad()
+                    output_model = model(mel)
+                    loss = criterion(output_model, stft)
+                    loss.backward()
+                    loss_list.append(loss.data.cpu().numpy())
+                    optimizer.step()
 
+            shuffle(dataloaders)
             loss_np = np.array(loss_list)
             average_loss = np.average(loss_np)
             print('epoch {}, loss {}'.format(epoch,average_loss))
@@ -94,7 +106,7 @@ class Training():
             name= "MLP1-smaller"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % 100) == 99:
+            if (epoch % 1000) == 999:
                 torch.save(model, name + str(epoch))
             if (epoch % 500) == 499:
                 if average_loss >= last_loss :
@@ -106,7 +118,7 @@ class Training():
 class GenerateAudioFromMel:
     def load_and_inference_and_convert(dataloader):
         stft_list = []
-        model = torch.load("MLP1-shuffle-enabled")
+        model = torch.load("MLP1-multi-files")
         for i, (mel,stft) in enumerate(dataloader):
             mel = mel.cuda()
             stft_part = model(mel).cpu().detach().numpy()
@@ -132,6 +144,7 @@ class GenerateAudioFromMel:
         plt.title(title)
         plt.show()
 
-Training(DataPrep().dataloader)
-#dataloader = DataPrep().dataloader
-#GenerateAudioFromMel.load_and_inference_and_convert(dataloader)
+#dataloaders = DataPrep.loadFolder("./inWav/")
+Training(DataPrep.loadFolder("./inWav/"))
+#dataloader = DataPrep(False).dataloader
+#GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,"./inWav/arctic_indian_man16.wav"))
