@@ -33,18 +33,18 @@ class DataPrep():
     def loadFolder(foldername):
         loaded_files = []
         for filename in os.listdir(foldername):
-            loaded_files.append(DataPrep.loadFile(True,""+foldername+filename))
+            loaded_files.append(DataPrep.loadFile(True,False,""+foldername+filename))
             print("Path: "+foldername+filename)
         return loaded_files
 
-    def loadFile(shuffle,filename):
-        mel_and_stft = DataPrep.loadMelAndStft(filename)
+    def loadFile(shuffle,should_plot,filename):
+        mel_and_stft = DataPrep.loadMelAndStft(filename,should_plot)
         dataloader = DataLoader(mel_and_stft,
                                 batch_size=1,
                                 shuffle=shuffle)
         return dataloader
 
-    def loadMelAndStft(filename):
+    def loadMelAndStft(filename,should_plot):
         wav, sr = librosa.load(filename)
         stft_in = np.abs(librosa.stft(wav)) ** 2
         mel_in = librosa.feature.melspectrogram(S=stft_in)
@@ -53,7 +53,7 @@ class DataPrep():
 
         mel_in = np.swapaxes(mel_in, 0, 1)
         stft_in = np.swapaxes(stft_in, 0, 1)
-        GenerateAudioFromMel.plotSTFT(np.swapaxes(stft_in, 0, 1),"IN_Linear-frequency power spectrogram")
+        if should_plot: GenerateAudioFromMel.plotSTFT(np.swapaxes(stft_in, 0, 1),"IN_Linear-frequency power spectrogram")
 
         print("-----------------------------------")
         print("stft_in Size:", stft_in.shape)
@@ -147,4 +147,4 @@ class GenerateAudioFromMel:
 #dataloaders = DataPrep.loadFolder("./inWav/")
 Training(DataPrep.loadFolder("./inWav/"))
 #dataloader = DataPrep(False).dataloader
-#GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,"./inWav/arctic_indian_man16.wav"),"MLP1-smaller3999")
+#GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/arctic_indian_man16.wav"),"MLP1-smaller3999")
