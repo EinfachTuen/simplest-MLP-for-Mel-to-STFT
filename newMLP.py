@@ -5,6 +5,8 @@ from torch.autograd import Variable
 import numpy as np
 from torch.utils.data import DataLoader
 import librosa
+import librosa.display
+import matplotlib.pyplot as plt
 
 class LinearRegressionModel(nn.Module):
     def __init__(self, input_dim, output_dim):
@@ -30,7 +32,7 @@ class DataPrep():
         mel_and_stft = self.loadMelAndStft()
         self.dataloader = DataLoader(mel_and_stft,
                                 batch_size=1,
-                                shuffle=False)
+                                shuffle=True)
 
     def loadMelAndStft(self):
         wav, sr = librosa.load("./inWav/arctic_indian_man16.wav")
@@ -41,6 +43,7 @@ class DataPrep():
 
         mel_in = np.swapaxes(mel_in, 0, 1)
         stft_in = np.swapaxes(stft_in, 0, 1)
+        GenerateAudioFromMel.plotSTFT(np.swapaxes(stft_in, 0, 1),"IN_Linear-frequency power spectrogram")
 
         print("-----------------------------------")
         print("stft_in Size:", stft_in.shape)
@@ -91,27 +94,44 @@ class Training():
             name= "MLP1-smaller"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % 1000) == 999:
+            if (epoch % 100) == 99:
                 torch.save(model, name + str(epoch))
-            if (epoch % 200) == 199:
+            if (epoch % 500) == 499:
                 if average_loss >= last_loss :
                     learning_rate =int(learning_rate *-0.5)
                     print("learning_rate changed to"+str(learning_rate))
                 last_loss = average_loss
 
 
-class GenerateAudioFromMel():
-    def __init__(self, dataloader):
-        stft =[]
-        model = torch.load("MLP1-99")
+class GenerateAudioFromMel:
+    def load_and_inference_and_convert(dataloader):
+        stft_list = []
+        model = torch.load("MLP1-shuffle-enabled")
         for i, (mel,stft) in enumerate(dataloader):
             mel = mel.cuda()
-            stft_part = model(mel).cpu().numpy()
-            stft.append(stft_part)
+            stft_part = model(mel).cpu().detach().numpy()
+            stft_list.append(stft_part[0])
 
-        stft = np.asarray(stft)
-        print(stft.shape)
+        stft_list = np.asarray(stft_list)
+        stft_list = np.swapaxes(stft_list, 0, 1)
+        GenerateAudioFromMel.stft_to_audio(stft_list)
+        print(stft_list.shape)
+
+    def stft_to_audio(stft):
+        print("test2")
+        wav = librosa.istft(stft)
+        librosa.output.write_wav("test.wav",wav,16000)
+        GenerateAudioFromMel.plotSTFT(stft,"OUT_Linear-frequency power spectrogram")
+
+    def plotSTFT(stft,title):
+        plt.figure(figsize=(12, 8))
+        plt.subplot(4, 2, 1)
+        D = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+        librosa.display.specshow(D, y_axis='linear')
+        plt.colorbar(format='%+2.0f dB')
+        plt.title(title)
+        plt.show()
 
 Training(DataPrep().dataloader)
-
-# GenerateAudioFromMel(DataPrep().dataloader)
+#dataloader = DataPrep().dataloader
+#GenerateAudioFromMel.load_and_inference_and_convert(dataloader)
