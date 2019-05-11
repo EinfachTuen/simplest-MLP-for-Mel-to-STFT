@@ -145,6 +145,6 @@ class GenerateAudioFromMel:
         plt.show()
 
 #dataloaders = DataPrep.loadFolder("./inWav/")
-#Training(DataPrep.loadFolder("./inWav/"))
+Training(DataPrep.loadFolder("./inWav/"))
 #dataloader = DataPrep(False).dataloader
-GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,"./inWav/arctic_indian_man16.wav"),"MLP1-smaller3999")
+#GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,"./inWav/arctic_indian_man16.wav"),"MLP1-smaller3999")
