@@ -11,7 +11,7 @@ class LinearRegressionModel(nn.Module):
         super(LinearRegressionModel, self).__init__()
         print("input_dim", input_dim)
         print("output_dim", output_dim)
-        hidden_layer_size = input_dim*5
+        hidden_layer_size = input_dim*10
         second_hidden_layer_size = input_dim*10
         self.linear1 = nn.Linear(input_dim, hidden_layer_size)
         self.linear2 = nn.Linear(hidden_layer_size, hidden_layer_size)
@@ -91,19 +91,27 @@ class Training():
             name= "MLP1-smaller"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % 1000) == 99:
+            if (epoch % 1000) == 999:
                 torch.save(model, name + str(epoch))
             if (epoch % 200) == 199:
                 if average_loss >= last_loss :
-                    learning_rate *=-0.5
-                    print("learning_rate changed to"+learning_rate)
+                    learning_rate =int(learning_rate *-0.5)
+                    print("learning_rate changed to"+str(learning_rate))
                 last_loss = average_loss
 
-# class GenerateAudioFromMel():
-#     def __init__(self, dataloader):
-#         for i, (mel, stft) in enumerate(dataloader):
-#
 
+class GenerateAudioFromMel():
+    def __init__(self, dataloader):
+        stft =[]
+        model = torch.load("MLP1-99")
+        for i, (mel,stft) in enumerate(dataloader):
+            mel = mel.cuda()
+            stft_part = model(mel).cpu().numpy()
+            stft.append(stft_part)
 
+        stft = np.asarray(stft)
+        print(stft.shape)
 
 Training(DataPrep().dataloader)
+
+# GenerateAudioFromMel(DataPrep().dataloader)
