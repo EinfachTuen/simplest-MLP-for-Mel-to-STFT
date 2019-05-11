@@ -106,7 +106,7 @@ class Training():
             name= "MLP1-smaller"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % 1000) == 999:
+            if (epoch % 300) == 299:
                 torch.save(model, name + str(epoch))
             if (epoch % 500) == 499:
                 if average_loss >= last_loss :
@@ -116,9 +116,9 @@ class Training():
 
 
 class GenerateAudioFromMel:
-    def load_and_inference_and_convert(dataloader):
+    def load_and_inference_and_convert(dataloader,modelname):
         stft_list = []
-        model = torch.load("MLP1-multi-files")
+        model = torch.load(modelname)
         for i, (mel,stft) in enumerate(dataloader):
             mel = mel.cuda()
             stft_part = model(mel).cpu().detach().numpy()
@@ -126,13 +126,13 @@ class GenerateAudioFromMel:
 
         stft_list = np.asarray(stft_list)
         stft_list = np.swapaxes(stft_list, 0, 1)
-        GenerateAudioFromMel.stft_to_audio(stft_list)
+        GenerateAudioFromMel.stft_to_audio(stft_list,modelname)
         print(stft_list.shape)
 
-    def stft_to_audio(stft):
+    def stft_to_audio(stft,modelname):
         print("test2")
         wav = librosa.istft(stft)
-        librosa.output.write_wav("test.wav",wav,16000)
+        librosa.output.write_wav(modelname+"test.wav",wav,16000)
         GenerateAudioFromMel.plotSTFT(stft,"OUT_Linear-frequency power spectrogram")
 
     def plotSTFT(stft,title):
@@ -145,6 +145,6 @@ class GenerateAudioFromMel:
         plt.show()
 
 #dataloaders = DataPrep.loadFolder("./inWav/")
-Training(DataPrep.loadFolder("./inWav/"))
+#Training(DataPrep.loadFolder("./inWav/"))
 #dataloader = DataPrep(False).dataloader
-#GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,"./inWav/arctic_indian_man16.wav"))
+GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,"./inWav/arctic_indian_man16.wav"),"MLP1-smaller3999")
