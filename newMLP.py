@@ -11,10 +11,12 @@ class LinearRegressionModel(nn.Module):
         super(LinearRegressionModel, self).__init__()
         print("input_dim", input_dim)
         print("output_dim", output_dim)
-        self.linear1 = nn.Linear(input_dim, input_dim * 30)
-        self.linear2 = nn.Linear(input_dim * 30, input_dim * 30)
-        self.linear3 = nn.Linear(input_dim * 30, input_dim * 30)
-        self.linear4 = nn.Linear(input_dim * 30, output_dim)
+        hidden_layer_size = input_dim*15
+        second_hidden_layer_size = input_dim*15
+        self.linear1 = nn.Linear(input_dim, hidden_layer_size)
+        self.linear2 = nn.Linear(hidden_layer_size, hidden_layer_size)
+        self.linear3 = nn.Linear(hidden_layer_size, second_hidden_layer_size)
+        self.linear4 = nn.Linear(second_hidden_layer_size, output_dim)
 
     def forward(self, x):
         x = f.relu(self.linear1(x))
@@ -86,16 +88,22 @@ class Training():
             average_loss = np.average(loss_np)
             print('epoch {}, loss {}'.format(epoch,average_loss))
 
-            name= "MLP1-refactored"
+            name= "MLP1-refactored_"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % 100) == 99:
+            if (epoch % 1000) == 99:
                 torch.save(model, name + str(epoch))
             if (epoch % 200) == 199:
                 if average_loss >= last_loss :
                     learning_rate *=-0.5
                     print("learning_rate changed to"+learning_rate)
                 last_loss = average_loss
+#
+# class GenerateAudioFromMel():
+#     def __init__(self, dataloader):
+#         for i, (mel, stft) in enumerate(dataloader):
+
+
 
 
 Training(DataPrep().dataloader)
