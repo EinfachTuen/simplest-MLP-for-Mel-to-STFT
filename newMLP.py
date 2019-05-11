@@ -11,8 +11,8 @@ class LinearRegressionModel(nn.Module):
         super(LinearRegressionModel, self).__init__()
         print("input_dim", input_dim)
         print("output_dim", output_dim)
-        hidden_layer_size = input_dim*15
-        second_hidden_layer_size = input_dim*15
+        hidden_layer_size = input_dim*5
+        second_hidden_layer_size = input_dim*10
         self.linear1 = nn.Linear(input_dim, hidden_layer_size)
         self.linear2 = nn.Linear(hidden_layer_size, hidden_layer_size)
         self.linear3 = nn.Linear(hidden_layer_size, second_hidden_layer_size)
@@ -88,7 +88,7 @@ class Training():
             average_loss = np.average(loss_np)
             print('epoch {}, loss {}'.format(epoch,average_loss))
 
-            name= "MLP1-refactored_"
+            name= "MLP1-smaller"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
             if (epoch % 1000) == 99:
@@ -98,11 +98,11 @@ class Training():
                     learning_rate *=-0.5
                     print("learning_rate changed to"+learning_rate)
                 last_loss = average_loss
-#
+
 # class GenerateAudioFromMel():
 #     def __init__(self, dataloader):
 #         for i, (mel, stft) in enumerate(dataloader):
-
+#
 
 
 
