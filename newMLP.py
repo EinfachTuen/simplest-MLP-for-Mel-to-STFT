@@ -26,7 +26,7 @@ class LinearRegressionModel(nn.Module):
         x = f.relu(self.linear1(x))
         x = f.relu(self.linear2(x))
         x = f.relu(self.linear3(x))
-        out = f.relu(self.linear4(x))
+        out = self.linear4(x)
         return out
 
 class DataPrep():
@@ -92,8 +92,8 @@ class Training():
         learning_rate = 0.1
         model = LinearRegressionModel(7 * 128, 1025).cuda()
 
-        optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-        criterion = nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        criterion = nn.L1Loss()
         last_loss = 999999
         for epoch in range(self.epochs):
             loss_list = []
@@ -156,4 +156,4 @@ class GenerateAudioFromMel:
 
 #dataloaders = DataPrep.loadFolder("./inWav/")
 #Training(DataPrep.loadFolder("./inWav/"))
-GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/bbad4n.wav"),"MLP-very-Small-lokal389","bbad4n")
+GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/16kLJ001-0007.wav"),"MLP-very-Small-lokal179","16kLJ001-0007")
