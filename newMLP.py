@@ -47,8 +47,8 @@ class DataPrep():
     def loadMelAndStft(filename,should_plot):
         wav, sr = librosa.load(filename)
         print("sample rate",sr)
-        stft_in = librosa.stft(wav,dtype=np.float32)
-        GenerateAudioFromMel.stft_to_audio(stft_in,"Test","float324")
+        stft_in = librosa.stft(wav)
+        GenerateAudioFromMel.stft_to_audio(stft_in,"Test","withAbs")
         mel_in = librosa.feature.melspectrogram(S=stft_in)
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
@@ -156,4 +156,4 @@ class GenerateAudioFromMel:
 
 #dataloaders = DataPrep.loadFolder("./inWav/")
 #Training(DataPrep.loadFolder("./inWav/"))
-GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/16kLJ001-0007.wav"),"MLP-very-Small-lokal179","16kLJ001-0007")
+GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/16kLJ001-0001.wav"),"MLP-very-Small-lokal59","16kLJ001-0001")
