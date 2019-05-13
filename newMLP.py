@@ -47,7 +47,7 @@ class DataPrep():
     def loadMelAndStft(filename,should_plot):
         wav, sr = librosa.load(filename)
         print("sample rate",sr)
-        stft_in = librosa.stft(wav)
+        stft_in = librosa.stft(wav,dtype=np.float32)
         GenerateAudioFromMel.stft_to_audio(stft_in,"Test","withAbs")
         mel_in = librosa.feature.melspectrogram(S=stft_in)
         stft_in = np.array(stft_in)
@@ -89,11 +89,11 @@ class Training():
     def __init__(self, dataloaders):
         self.epochs = 100000
 
-        learning_rate = 0.1
+        learning_rate = 0.001
         model = LinearRegressionModel(7 * 128, 1025).cuda()
 
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        criterion = nn.L1Loss()
+        criterion = nn.MSELoss()
         last_loss = 999999
         for epoch in range(self.epochs):
             loss_list = []
@@ -113,13 +113,13 @@ class Training():
             average_loss = np.average(loss_np)
             print('epoch {}, loss {}'.format(epoch,average_loss))
 
-            name= "MLP-very-Small-lokal"
+            name= "ML_Adam_MSE"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
             if (epoch % 30) == 29:
                 torch.save(model, name + str(epoch))
             if (epoch % 500) == 499:
-                if average_loss >= last_loss :
+                if average_loss >= last_loss:
                     learning_rate =int(learning_rate *-0.5)
                     print("learning_rate changed to"+str(learning_rate))
                 last_loss = average_loss
@@ -156,4 +156,4 @@ class GenerateAudioFromMel:
 
 #dataloaders = DataPrep.loadFolder("./inWav/")
 #Training(DataPrep.loadFolder("./inWav/"))
-GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/16kLJ001-0001.wav"),"MLP-very-Small-lokal59","16kLJ001-0001")
+GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/16kLJ001-0001.wav"),"ML_Adam_MSE29","16kLJ001-0001")
