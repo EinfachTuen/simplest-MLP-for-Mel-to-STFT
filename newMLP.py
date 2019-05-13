@@ -113,7 +113,7 @@ class Training():
             average_loss = np.average(loss_np)
             print('epoch {}, loss {}'.format(epoch,average_loss))
 
-            name= "ML_Adam_MSE"
+            name= "ML_Adam_MSE_multi_files"
             log_file = open('loss_log.txt', 'a')
             log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
             if (epoch % 30) == 29:
@@ -122,7 +122,7 @@ class Training():
                 if average_loss >= last_loss:
                     learning_rate =int(learning_rate *-0.5)
                     print("learning_rate changed to"+str(learning_rate))
-                last_loss = average_loss
+                    last_loss = average_loss
 
 
 class GenerateAudioFromMel:
@@ -156,4 +156,4 @@ class GenerateAudioFromMel:
 
 #dataloaders = DataPrep.loadFolder("./inWav/")
 #Training(DataPrep.loadFolder("./inWav/"))
-GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/16kLJ001-0001.wav"),"ML_Adam_MSE29","16kLJ001-0001")
+GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/16kLJ001-0001.wav"),"ML_Adam_MSE_multi_files29","16kLJ001-0001")
