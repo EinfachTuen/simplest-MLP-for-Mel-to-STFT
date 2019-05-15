@@ -10,6 +10,39 @@ import matplotlib.pyplot as plt
 import os
 from random import shuffle
 
+
+class StateClass():
+    def __init__(self):
+        self.epochs = 100000
+        self.learning_rate = 0.001
+        self.model_input_size = 7 * 128
+        self.model_output_size = 1025
+        self.last_loss = 999999
+        self.dataloaders = None
+        self.single_dataloader = None
+        self.model = LinearRegressionModel(self.model_input_size, self.model_output_size).cuda()
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.criterion = nn.MSELoss()
+        self.modelname= "MLP-ADAM-MSE-10Hidden-complex29"
+        self.epochs_per_save = 30
+        self.epochs_per_learning_change = 500
+        self.result_filename = "result_audio"
+        self.normalization_test_filename = "normalization_test_audio"
+        self.sampling_rate = 22050
+
+    def do_inference(self):
+        self.single_dataloader = DataPrep.loadFile(None,self,False,True,"./inWav/16kLJ001-0001.wav")
+        generateAudioFromMel = GenerateAudioFromMel()
+        GenerateAudioFromMel.load_and_inference_and_convert(generateAudioFromMel,self)
+        print("-----------------------------------")
+        print("inference finished")
+        print("-----------------------------------")
+
+
+    def run_training(self):
+        DataPrep.loadFolder(None,self,"./inWav/")
+        Training(self)
+
 class LinearRegressionModel(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(LinearRegressionModel, self).__init__()
@@ -29,26 +62,55 @@ class LinearRegressionModel(nn.Module):
         out = self.linear4(x)
         return out
 
+class Training():
+    def __init__(self,state):
+        for epoch in range(state.epochs):
+            loss_list = []
+            for dataloader in state.dataloaders:
+                for i,(mel,stft) in enumerate(dataloader):
+                    mel = mel.cuda()
+                    stft = stft.cuda()
+                    state.optimizer.zero_grad()
+                    output_model = state.model(mel)
+                    loss = state.criterion(output_model, stft)
+                    loss.backward()
+                    loss_list.append(loss.data.cpu().numpy())
+                    state.optimizer.step()
+            shuffle(state.dataloaders)
+            loss_np = np.array(loss_list)
+            average_loss = np.average(loss_np)
+            print('epoch {}, loss {}'.format(epoch,average_loss))
+
+            log_file = open('loss_log.txt', 'a')
+            log_file.write(state.modelname+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
+            if (epoch % state.epochs_per_save) == state.epochs_per_save-1:
+                torch.save(state.model, state.modelname + str(epoch))
+            if (epoch % state.epochs_per_learning_change) == state.epochs_per_learning_change-1:
+                if average_loss >= state.last_loss :
+                    state.learning_rate =int(state.learning_rate *-0.5)
+                    print("learning_rate changed to"+str(state.learning_rate))
+                    state.last_loss = average_loss
+
 class DataPrep():
-    def loadFolder(foldername):
+    def loadFolder(self, state, foldername):
         loaded_files = []
         for filename in os.listdir(foldername):
-            loaded_files.append(DataPrep.loadFile(True,False,""+foldername+filename))
+            loaded_files.append(DataPrep.loadFile(self,state,True,False,""+foldername+filename))
             print("Path: "+foldername+filename)
-        return loaded_files
+        state.dataloaders = loaded_files
 
-    def loadFile(shuffle,should_plot,filename):
-        mel_and_stft = DataPrep.loadMelAndStft(filename,should_plot)
-        dataloader = DataLoader(mel_and_stft,
+    def loadFile(self,state,shuffle,should_plot,filename):
+        mel_and_stft = DataPrep.loadMelAndStft(self,state,filename,should_plot)
+        return  DataLoader(mel_and_stft,
                                 batch_size=1,
                                 shuffle=shuffle)
-        return dataloader
 
-    def loadMelAndStft(filename,should_plot):
+    def loadMelAndStft(self,state,filename,should_plot):
         wav, sr = librosa.load(filename)
+        state.sampling_rate = sr
         print("sample rate",sr)
         stft_in = librosa.stft(wav)
-        GenerateAudioFromMel.stft_to_audio(stft_in,"Test","withAbs")
+        GenerateAudioFromMel.stft_to_audio(None,state,stft_in,"Original stft",state.normalization_test_filename)
         mel_in = librosa.feature.melspectrogram(S=stft_in)
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
@@ -63,7 +125,6 @@ class DataPrep():
         print("mel_max",mel_max)
         mel_in = np.swapaxes(mel_in, 0, 1)
         stft_in = np.swapaxes(stft_in, 0, 1)
-        if should_plot: GenerateAudioFromMel.plotSTFT(np.swapaxes(stft_in, 0, 1),"IN_Linear-frequency power spectrogram")
 
         print("-----------------------------------")
         print("stft_in Size:", stft_in.shape)
@@ -85,67 +146,27 @@ class DataPrep():
             mel_and_stft.append([mel_in_with_overlap,stft_in[element]])
         return mel_and_stft
 
-class Training():
-    def __init__(self, dataloaders):
-        self.epochs = 100000
-
-        learning_rate = 0.001
-        model = LinearRegressionModel(7 * 128, 1025).cuda()
-
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        criterion = nn.MSELoss()
-        last_loss = 999999
-        for epoch in range(self.epochs):
-            loss_list = []
-            for dataloader in dataloaders:
-                for i,(mel,stft) in enumerate(dataloader):
-                    mel = mel.cuda()
-                    stft = stft.cuda()
-                    optimizer.zero_grad()
-                    output_model = model(mel)
-                    loss = criterion(output_model, stft)
-                    loss.backward()
-                    loss_list.append(loss.data.cpu().numpy())
-                    optimizer.step()
-
-            shuffle(dataloaders)
-            loss_np = np.array(loss_list)
-            average_loss = np.average(loss_np)
-            print('epoch {}, loss {}'.format(epoch,average_loss))
-
-            name= "MLP-ADAM-MSE-10Hidden-complex"
-            log_file = open('loss_log.txt', 'a')
-            log_file.write(name+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % 30) == 29:
-                torch.save(model, name + str(epoch))
-            if (epoch % 500) == 499:
-                if average_loss >= last_loss :
-                    learning_rate =int(learning_rate *-0.5)
-                    print("learning_rate changed to"+str(learning_rate))
-                last_loss = average_loss
-
-
 class GenerateAudioFromMel:
-    def load_and_inference_and_convert(dataloader,modelname,result_filename):
+    def load_and_inference_and_convert(self, state):
         stft_list = []
-        model = torch.load(modelname)
-        for i, (mel,stft) in enumerate(dataloader):
+        state.model = torch.load(state.modelname)
+        for i, (mel,stft) in enumerate(state.single_dataloader):
             mel = mel.cuda()
-            stft_part = model(mel).cpu().detach().numpy()
+            stft_part = state.model(mel).cpu().detach().numpy()
             stft_list.append(stft_part[0])
 
         stft_list = np.asarray(stft_list)
         stft_list = np.swapaxes(stft_list, 0, 1)
-        GenerateAudioFromMel.stft_to_audio(stft_list,modelname,result_filename)
+        GenerateAudioFromMel.stft_to_audio(self,state,stft_list,"Result STFT",state.result_filename)
         print(stft_list.shape)
 
-    def stft_to_audio(stft,modelname,result_filename):
-        print("test2")
+    def stft_to_audio(self,state,stft,diagramm_name,filename):
         wav = librosa.istft(stft)
-        librosa.output.write_wav(modelname+result_filename+".wav",wav,22050)
-        GenerateAudioFromMel.plotSTFT(stft,"OUT_Linear-frequency power spectrogram")
+        librosa.output.write_wav(state.modelname+'_'+filename+".wav",wav,state.sampling_rate)
+        GenerateAudioFromMel.plotSTFT(self,stft,diagramm_name)
 
-    def plotSTFT(stft,title):
+
+    def plotSTFT(self,stft,title):
         plt.figure(figsize=(12, 8))
         plt.subplot(4, 2, 1)
         D = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
@@ -154,6 +175,20 @@ class GenerateAudioFromMel:
         plt.title(title)
         plt.show()
 
-#dataloaders = DataPrep.loadFolder("./inWav/")
-#Training(DataPrep.loadFolder("./inWav/"))
-GenerateAudioFromMel.load_and_inference_and_convert(DataPrep.loadFile(False,True,"./inWav/arctic_indian_man16.wav"),"MLP-ADAM-MSE-10Hidden-complex29","arctic_indian_man16")
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', "--training", dest='training', action='store_true')
+    parser.add_argument('-i', '--inference', dest='inference', action='store_true')
+
+    parser.set_defaults(training=False)
+    parser.set_defaults(inference=False)
+    args = parser.parse_args()
+
+    state = StateClass()
+    if args.training:
+        state.run_training()
+    if args.inference:
+        state.do_inference()
