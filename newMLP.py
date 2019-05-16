@@ -24,6 +24,8 @@ class StateClass():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
         self.modelname= "MLP-ADAM-MSE-10Hidden-complex29"
+        self.single_file = "./inWav/16kLJ001-0001.wav"
+        self.training_folder= "./inWav/"
         self.epochs_per_save = 30
         self.epochs_per_learning_change = 500
         self.result_filename = "result_audio"
@@ -31,7 +33,7 @@ class StateClass():
         self.sampling_rate = 22050
 
     def do_inference(self):
-        self.single_dataloader = DataPrep.loadFile(None,self,False,True,"./inWav/16kLJ001-0001.wav")
+        self.single_dataloader = DataPrep.loadFile(None,self,False,True,state.single_file)
         generateAudioFromMel = GenerateAudioFromMel()
         GenerateAudioFromMel.load_and_inference_and_convert(generateAudioFromMel,self)
         print("-----------------------------------")
@@ -40,7 +42,7 @@ class StateClass():
 
 
     def run_training(self):
-        DataPrep.loadFolder(None,self,"./inWav/")
+        DataPrep.loadFolder(None,self)
         Training(self)
 
 class LinearRegressionModel(nn.Module):
@@ -92,11 +94,12 @@ class Training():
                     state.last_loss = average_loss
 
 class DataPrep():
-    def loadFolder(self, state, foldername):
+    def loadFolder(self, state):
+
         loaded_files = []
-        for filename in os.listdir(foldername):
-            loaded_files.append(DataPrep.loadFile(self,state,True,False,""+foldername+filename))
-            print("Path: "+foldername+filename)
+        for filename in os.listdir(state.training_folder):
+            loaded_files.append(DataPrep.loadFile(self,state,True,False,""+state.training_folder+filename))
+            print("Path: "+state.training_folder+filename)
         state.dataloaders = loaded_files
 
     def loadFile(self,state,shuffle,should_plot,filename):
@@ -182,12 +185,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', "--training", dest='training', action='store_true')
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
+    parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
+    parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex29")
+    parser.add_argument('-sf', '--single_file', default="./inWav/16kLJ001-0003.wav")
+    parser.add_argument('-eps', '--epochsPerSave', default=30,type=int)
+    parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
 
     parser.set_defaults(training=False)
     parser.set_defaults(inference=False)
     args = parser.parse_args()
 
     state = StateClass()
+
+    state.training_folder = args.trainingFolder
+    state.modelname= args.modelname
+    state.single_file= args.single_file
+    state.epochs_per_save= args.epochsPerSave
+    state.learningRate= args.epochsPerSave
+
     if args.training:
         state.run_training()
     if args.inference:
