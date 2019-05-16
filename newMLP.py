@@ -26,7 +26,7 @@ class StateClass():
         self.modelname= "MLP-ADAM-MSE-10Hidden-complex29"
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= "./inWav/"
-        self.epochs_per_save = 30
+        self.epochs_per_save = None
         self.epochs_per_learning_change = 500
         self.result_filename = "result_audio"
         self.normalization_test_filename = "normalization_test_audio"
@@ -85,7 +85,8 @@ class Training():
 
             log_file = open('loss_log.txt', 'a')
             log_file.write(state.modelname+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % state.epochs_per_save) == state.epochs_per_save-1:
+            if (epoch % state.epochs_per_save) == (state.epochs_per_save-1):
+                print("===> model saved")
                 torch.save(state.model, state.modelname + str(epoch))
             if (epoch % state.epochs_per_learning_change) == state.epochs_per_learning_change-1:
                 if average_loss >= state.last_loss :
@@ -188,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex29")
     parser.add_argument('-sf', '--single_file', default="./inWav/16kLJ001-0003.wav")
-    parser.add_argument('-eps', '--epochsPerSave', default=30,type=int)
+    parser.add_argument('-eps', '--epochsPerSave', default=1,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
 
     parser.set_defaults(training=False)
