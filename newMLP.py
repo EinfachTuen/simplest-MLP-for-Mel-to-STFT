@@ -87,7 +87,7 @@ class Training():
             log_file = open('loss_log.txt', 'a')
             log_file.write(state.modelname+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
             if (epoch % state.epochs_per_save) == (state.epochs_per_save-1):
-                print("===> model saved")
+                print("===> model saved",state.model_storage + state.modelname + str(epoch))
                 torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(epoch))
             if (epoch % state.epochs_per_learning_change) == state.epochs_per_learning_change-1:
                 if average_loss >= state.last_loss :
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     state.single_file= args.single_file
     state.epochs_per_save= args.epochsPerSave
     state.learningRate= args.learningRate
-    state.modelStorage= args.modelStorage
+    state.model_storage= args.modelStorage
 
     if args.training:
         state.run_training()
