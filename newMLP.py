@@ -24,6 +24,7 @@ class StateClass():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
         self.modelname= "MLP-ADAM-MSE-10Hidden-complex29"
+        self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= "./inWav/"
         self.epochs_per_save = None
@@ -87,7 +88,7 @@ class Training():
             log_file.write(state.modelname+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
             if (epoch % state.epochs_per_save) == (state.epochs_per_save-1):
                 print("===> model saved")
-                torch.save(state.model.state_dict(), state.modelname + str(epoch))
+                torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(epoch))
             if (epoch % state.epochs_per_learning_change) == state.epochs_per_learning_change-1:
                 if average_loss >= state.last_loss :
                     state.learning_rate =int(state.learning_rate *-0.5)
@@ -194,6 +195,7 @@ if __name__ == "__main__":
     parser.add_argument('-sf', '--single_file', default="./inWav/16kLJ001-0003.wav")
     parser.add_argument('-eps', '--epochsPerSave', default=1,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
+    parser.add_argument('-ms', '--modelStorage', default="")
 
     parser.set_defaults(training=False)
     parser.set_defaults(inference=False)
@@ -205,7 +207,8 @@ if __name__ == "__main__":
     state.modelname= args.modelname
     state.single_file= args.single_file
     state.epochs_per_save= args.epochsPerSave
-    state.learningRate= args.epochsPerSave
+    state.learningRate= args.learningRate
+    state.modelStorage= args.modelStorage
 
     if args.training:
         state.run_training()
