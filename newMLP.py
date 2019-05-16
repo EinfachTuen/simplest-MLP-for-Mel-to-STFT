@@ -153,7 +153,10 @@ class DataPrep():
 class GenerateAudioFromMel:
     def load_and_inference_and_convert(self, state):
         stft_list = []
-        state.model = torch.load(state.modelname)
+        state.model = LinearRegressionModel(state.model_input_size, state.model_output_size)
+        state.model.load_state_dict(torch.load(state.modelname))
+        state.model.cuda()
+        state.model.eval()
         for i, (mel,stft) in enumerate(state.single_dataloader):
             mel = mel.cuda()
             stft_part = state.model(mel).cpu().detach().numpy()
@@ -187,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', "--training", dest='training', action='store_true')
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
-    parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex29")
+    parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex290")
     parser.add_argument('-sf', '--single_file', default="./inWav/16kLJ001-0003.wav")
     parser.add_argument('-eps', '--epochsPerSave', default=1,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
