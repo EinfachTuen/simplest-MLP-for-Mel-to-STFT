@@ -24,6 +24,7 @@ class StateClass():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
         self.modelname= "MLP-ADAM-MSE-10Hidden-complex29"
+        self.model_to_load= "MLP-ADAM-MSE-10Hidden-complex29"
         self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= "./inWav/"
@@ -155,9 +156,11 @@ class GenerateAudioFromMel:
     def load_and_inference_and_convert(self, state):
         stft_list = []
         state.model = LinearRegressionModel(state.model_input_size, state.model_output_size)
-        state.model.load_state_dict(torch.load(state.modelname))
+        print("load model", state.model_to_load)
+        state.model.load_state_dict(torch.load(state.model_to_load))
         state.model.cuda()
         state.model.eval()
+
         for i, (mel,stft) in enumerate(state.single_dataloader):
             mel = mel.cuda()
             stft_part = state.model(mel).cpu().detach().numpy()
@@ -191,11 +194,13 @@ if __name__ == "__main__":
     parser.add_argument('-t', "--training", dest='training', action='store_true')
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
-    parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex290")
+    parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex290239")
     parser.add_argument('-sf', '--single_file', default="./inWav/16kLJ001-0003.wav")
-    parser.add_argument('-eps', '--epochsPerSave', default=1,type=int)
+    parser.add_argument('-eps', '--epochsPerSave', default=30,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
+    parser.add_argument('-c', '--modelCheckpoint', default="")
+    parser.add_argument('-ml', '--modelToLoad', default="")
 
     parser.set_defaults(training=False)
     parser.set_defaults(inference=False)
@@ -210,6 +215,12 @@ if __name__ == "__main__":
     state.learningRate= args.learningRate
     state.model_storage= args.modelStorage
 
+    if args.modelToLoad != "":
+        state.model_to_load = args.modelToLoad
+    if args.modelCheckpoint != "":
+        state.model.load_state_dict(torch.load(args.modelCheckpoint))
+        state.model.cuda()
+        state.model.eval()
     if args.training:
         state.run_training()
     if args.inference:
