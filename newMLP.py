@@ -12,7 +12,7 @@ from random import shuffle
 
 
 class StateClass():
-    def __init__(self):
+    def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor):
         self.epochs = 100000
         self.learning_rate = 0.001
         self.model_input_size = 7 * 128
@@ -20,7 +20,9 @@ class StateClass():
         self.last_loss = 999999
         self.dataloaders = None
         self.single_dataloader = None
-        self.model = LinearRegressionModel(self.model_input_size, self.model_output_size).cuda()
+        self.first_hidden_layer_factor = first_hidden_layer_factor
+        self.second_hidden_layer_factor = second_hidden_layer_factor
+        self.model = LinearRegressionModel(self.model_input_size, self.model_output_size,first_hidden_layer_factor,second_hidden_layer_factor).cuda()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
         self.modelname= "MLP-ADAM-MSE-10Hidden-complex29"
@@ -33,6 +35,7 @@ class StateClass():
         self.result_filename = "result_audio"
         self.normalization_test_filename = "normalization_test_audio"
         self.sampling_rate = 22050
+
 
     def do_inference(self):
         self.single_dataloader = DataPrep.loadFile(None,self,False,True,state.single_file)
@@ -48,12 +51,12 @@ class StateClass():
         Training(self)
 
 class LinearRegressionModel(nn.Module):
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim, output_dim,first_hidden_layer_factor,second_hidden_layer_factor):
         super(LinearRegressionModel, self).__init__()
         print("input_dim", input_dim)
         print("output_dim", output_dim)
-        hidden_layer_size = input_dim*5
-        second_hidden_layer_size = input_dim*5
+        hidden_layer_size = input_dim * first_hidden_layer_factor
+        second_hidden_layer_size = input_dim * second_hidden_layer_factor
         self.linear1 = nn.Linear(input_dim, hidden_layer_size)
         self.linear2 = nn.Linear(hidden_layer_size, hidden_layer_size)
         self.linear3 = nn.Linear(hidden_layer_size, second_hidden_layer_size)
@@ -155,7 +158,7 @@ class DataPrep():
 class GenerateAudioFromMel:
     def load_and_inference_and_convert(self, state):
         stft_list = []
-        state.model = LinearRegressionModel(state.model_input_size, state.model_output_size)
+        state.model = LinearRegressionModel(state.model_input_size, state.model_output_size,state.first_hidden_layer_factor, state.second_hidden_layer_factor)
         print("load model", state.model_to_load)
         state.model.load_state_dict(torch.load(state.model_to_load))
         state.model.cuda()
@@ -195,32 +198,33 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex290239")
-    parser.add_argument('-sf', '--single_file', default="./inWav/16kLJ001-0003.wav")
+    parser.add_argument('-sf', '--single_file', default="./reserveWav/arctic_indian_man16.wav")
     parser.add_argument('-eps', '--epochsPerSave', default=30,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
-    parser.add_argument('-c', '--modelCheckpoint', default="")
-    parser.add_argument('-ml', '--modelToLoad', default="")
+    parser.add_argument('-c', '--modelCheckpoint', default="") #for keeping on training
+    parser.add_argument('-h1f','--firstHiddenlayer', default=5,type=int)
+    parser.add_argument('-h2f','--secondHiddenlayer', default=5,type=int)
 
     parser.set_defaults(training=False)
     parser.set_defaults(inference=False)
     args = parser.parse_args()
 
-    state = StateClass()
+    state = StateClass(args.firstHiddenlayer,args.secondHiddenlayer)
 
     state.training_folder = args.trainingFolder
     state.modelname= args.modelname
     state.single_file= args.single_file
     state.epochs_per_save= args.epochsPerSave
     state.learningRate= args.learningRate
-    state.model_storage= args.modelStorage
 
-    if args.modelToLoad != "":
-        state.model_to_load = args.modelToLoad
     if args.modelCheckpoint != "":
-        state.model.load_state_dict(torch.load(args.modelCheckpoint))
-        state.model.cuda()
-        state.model.eval()
+        if args.training:
+            state.model.load_state_dict(torch.load(args.modelCheckpoint))
+            state.model.cuda()
+            state.model.eval()
+        if args.inference:
+            state.model_to_load = args.modelCheckpoint
     if args.training:
         state.run_training()
     if args.inference:
