@@ -220,6 +220,7 @@ if __name__ == "__main__":
     state.epochs_per_save= args.epochsPerSave
     state.learningRate= args.learningRate
     state.lossfile= args.lossfile
+    state.modelStorage= args.modelStorage
 
     if args.modelCheckpoint != "":
         if args.training:
