@@ -30,6 +30,7 @@ class StateClass():
         self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= "./inWav/"
+        self.file_iterations_per_loss = None
         self.epochs_per_save = None
         self.epochs_per_learning_change = 500
         self.result_filename = "result_audio"
@@ -72,28 +73,34 @@ class LinearRegressionModel(nn.Module):
 
 class Training():
     def __init__(self,state):
+        file_number = 0
+        loss_list = []
         for epoch in range(state.epochs):
-            loss_list = []
             for dataloader in state.dataloaders:
+                file_number +=1
                 for i,(mel,stft) in enumerate(dataloader):
                     mel = mel.cuda()
                     stft = stft.cuda()
                     state.optimizer.zero_grad()
                     output_model = state.model(mel)
+
                     loss = state.criterion(output_model, stft)
                     loss.backward()
                     loss_list.append(loss.data.cpu().numpy())
                     state.optimizer.step()
-            shuffle(state.dataloaders)
-            loss_np = np.array(loss_list)
-            average_loss = np.average(loss_np)
-            print('epoch {}, loss {}'.format(epoch,average_loss))
 
-            log_file = open(state.lossfile, 'a')
-            log_file.write(state.modelname+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-            if (epoch % state.epochs_per_save) == (state.epochs_per_save-1):
-                print("===> model saved",state.model_storage + state.modelname + str(epoch))
-                torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(epoch))
+                if (file_number % state.epochs_per_save) == (state.epochs_per_save - 1):
+                    print("===> model saved", state.model_storage + state.modelname + str(epoch))
+                    torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(file_number))
+                loss_np = np.array(loss_list)
+                average_loss = np.average(loss_np)
+                print('file_number {}, loss {}'.format(file_number, average_loss))
+                log_file = open(state.lossfile, 'a')
+                log_file.write(state.modelname + str(file_number) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
+                loss_list = []
+            print("---------------------------------------------------------")
+            print("------------------epoch:"+ str(epoch)+"-----------------------")
+
             if (epoch % state.epochs_per_learning_change) == state.epochs_per_learning_change-1:
                 if average_loss >= state.last_loss :
                     state.learning_rate =int(state.learning_rate *-0.5)
@@ -145,15 +152,14 @@ class DataPrep():
         mel_and_stft = []
         input_overlap_per_side = 3
         for element in range(mel_in.shape[0]):
-            mel_in_with_overlap = []
-            for number in range(input_overlap_per_side*2+1):
-                actual_mel_index = element - input_overlap_per_side + number
-                if -1 < actual_mel_index < mel_in.shape[0]:
+            if(element > input_overlap_per_side and element <  mel_in.shape[0]-input_overlap_per_side):
+                mel_in_with_overlap = []
+                for number in range(input_overlap_per_side*2+1):
+                    actual_mel_index = element - input_overlap_per_side + number
                     mel_in_with_overlap.append(mel_in[actual_mel_index])
-                else: mel_in_with_overlap.append(np.zeros(mel_in.shape[1]))
-            mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
-            stft_in =np.asarray(stft_in,dtype=np.float32)
-            mel_and_stft.append([mel_in_with_overlap,stft_in[element]])
+                mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
+                stft_in =np.asarray(stft_in,dtype=np.float32)
+                mel_and_stft.append([mel_in_with_overlap,stft_in[element]])
         return mel_and_stft
 
 class GenerateAudioFromMel:
