@@ -37,6 +37,7 @@ class StateClass():
         self.normalization_test_filename = "normalization_test_audio"
         self.sampling_rate = 22050
         self.lossfile = 'loss_log.txt'
+        self.debug = False
 
 
     def do_inference(self):
@@ -127,7 +128,8 @@ class DataPrep():
         state.sampling_rate = sr
         print("sample rate",sr)
         stft_in = librosa.stft(wav)
-        GenerateAudioFromMel.stft_to_audio(None,state,stft_in,"Original stft",state.normalization_test_filename)
+        if state.debug:
+            GenerateAudioFromMel.stft_to_audio(None,state,stft_in,"Original stft",state.normalization_test_filename)
         mel_in = librosa.feature.melspectrogram(S=stft_in)
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
@@ -202,6 +204,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', "--training", dest='training', action='store_true')
+    parser.add_argument('-d', "--debug", dest='debug', action='store_true')
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10H")
@@ -214,6 +217,7 @@ if __name__ == "__main__":
     parser.add_argument('-h2f','--secondHiddenlayer', default=5,type=int)
     parser.add_argument('-lf','--lossfile', default="log_loss.txt")
 
+    parser.set_defaults(debug=False)
     parser.set_defaults(training=False)
     parser.set_defaults(inference=False)
     args = parser.parse_args()
@@ -227,6 +231,7 @@ if __name__ == "__main__":
     state.learningRate= args.learningRate
     state.lossfile= args.lossfile
     state.modelStorage= args.modelStorage
+    state.debug= args.debug
 
     if args.modelCheckpoint != "":
         if args.training:
