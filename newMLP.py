@@ -25,8 +25,8 @@ class StateClass():
         self.model = LinearRegressionModel(self.model_input_size, self.model_output_size,first_hidden_layer_factor,second_hidden_layer_factor).cuda()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
-        self.modelname= "MLP-ADAM-MSE-10Hidden-complex29"
-        self.model_to_load= "MLP-ADAM-MSE-10Hidden-complex29"
+        self.modelname= "MLP-ADAM-MSE-10Hidden"
+        self.model_to_load= ""
         self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= "./inWav/"
@@ -35,6 +35,7 @@ class StateClass():
         self.result_filename = "result_audio"
         self.normalization_test_filename = "normalization_test_audio"
         self.sampling_rate = 22050
+        self.lossfile = 'loss_log.txt'
 
 
     def do_inference(self):
@@ -88,7 +89,7 @@ class Training():
             average_loss = np.average(loss_np)
             print('epoch {}, loss {}'.format(epoch,average_loss))
 
-            log_file = open('loss_log.txt', 'a')
+            log_file = open(state.lossfile, 'a')
             log_file.write(state.modelname+str(epoch) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
             if (epoch % state.epochs_per_save) == (state.epochs_per_save-1):
                 print("===> model saved",state.model_storage + state.modelname + str(epoch))
@@ -197,14 +198,15 @@ if __name__ == "__main__":
     parser.add_argument('-t', "--training", dest='training', action='store_true')
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
-    parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10Hidden-complex290239")
+    parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10H")
     parser.add_argument('-sf', '--single_file', default="./reserveWav/arctic_indian_man16.wav")
     parser.add_argument('-eps', '--epochsPerSave', default=30,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
-    parser.add_argument('-c', '--modelCheckpoint', default="") #for keeping on training
+    parser.add_argument('-c', '--modelCheckpoint', default="")
     parser.add_argument('-h1f','--firstHiddenlayer', default=5,type=int)
     parser.add_argument('-h2f','--secondHiddenlayer', default=5,type=int)
+    parser.add_argument('-lf','--lossfile', default="log_loss.txt")
 
     parser.set_defaults(training=False)
     parser.set_defaults(inference=False)
@@ -217,6 +219,7 @@ if __name__ == "__main__":
     state.single_file= args.single_file
     state.epochs_per_save= args.epochsPerSave
     state.learningRate= args.learningRate
+    state.lossfile= args.lossfile
 
     if args.modelCheckpoint != "":
         if args.training:
