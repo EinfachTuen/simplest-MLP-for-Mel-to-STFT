@@ -126,31 +126,30 @@ class DataPrep():
     def loadMelAndStft(self,state,filename,should_plot):
         wav, sr = librosa.load(filename)
         state.sampling_rate = sr
-        print("sample rate",sr)
         stft_in = librosa.stft(wav)
-        if state.debug:
-            GenerateAudioFromMel.stft_to_audio(None,state,stft_in,"Original stft",state.normalization_test_filename)
         mel_in = librosa.feature.melspectrogram(S=stft_in)
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
-        stft_min = np.min(stft_in)
-        stft_max = np.max(stft_in)
-        mel_min = np.min(mel_in)
-        mel_max = np.max(mel_in)
+        if state.debug:
+            GenerateAudioFromMel.stft_to_audio(None,state,stft_in,"Original stft",state.normalization_test_filename)
+            print("sample rate", sr)
+            stft_min = np.min(stft_in)
+            stft_max = np.max(stft_in)
+            mel_min = np.min(mel_in)
+            mel_max = np.max(mel_in)
+            print("stft_min",stft_min)
+            print("stft_max",stft_max)
+            print("mel_min",mel_min)
+            print("mel_max",mel_max)
+            print("-----------------------------------")
+            print("stft_in Size:", stft_in.shape)
 
-        print("stft_min",stft_min)
-        print("stft_max",stft_max)
-        print("mel_min",mel_min)
-        print("mel_max",mel_max)
+            print("-----------------------------------")
+            print("mel_in Shape:", mel_in.shape)
+
         mel_in = np.swapaxes(mel_in, 0, 1)
         stft_in = np.swapaxes(stft_in, 0, 1)
 
-        print("-----------------------------------")
-        print("stft_in Size:", stft_in.shape)
-
-        print("-----------------------------------")
-        print("mel_in Shape:", mel_in.shape)
-        print("mel_in Size:", mel_in.shape[1])
         mel_and_stft = []
         input_overlap_per_side = 3
         for element in range(mel_in.shape[0]):
