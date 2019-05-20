@@ -97,7 +97,7 @@ class Training():
                 average_loss = np.average(loss_np)
                 print('file_number {}, loss {}'.format(file_number, average_loss))
                 log_file = open(state.lossfile, 'a')
-                log_file.write(state.modelname + str(file_number) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
+                log_file.write(str(file_number) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
                 loss_list = []
             print("---------------------------------------------------------")
             print("------------------epoch:"+ str(epoch)+"-----------------------")
@@ -222,14 +222,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     state = StateClass(args.firstHiddenlayer,args.secondHiddenlayer)
-
+    print('Model Storage', args.modelStorage)
     state.training_folder = args.trainingFolder
     state.modelname= args.modelname
     state.single_file= args.single_file
     state.epochs_per_save= args.epochsPerSave
     state.learningRate= args.learningRate
     state.lossfile= args.lossfile
-    state.modelStorage= args.modelStorage
+    state.model_storage= args.modelStorage
     state.debug= args.debug
 
     if args.modelCheckpoint != "":
