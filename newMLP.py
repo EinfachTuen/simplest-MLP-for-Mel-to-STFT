@@ -97,7 +97,7 @@ class Training():
                 average_loss = np.average(loss_np)
                 print('file_number {}, loss {}'.format(file_number, average_loss))
                 log_file = open(state.lossfile, 'a')
-                log_file.write(str(file_number) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
+                log_file.write(state.modelname + str(file_number) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
                 loss_list = []
             print("---------------------------------------------------------")
             print("------------------epoch:"+ str(epoch)+"-----------------------")
