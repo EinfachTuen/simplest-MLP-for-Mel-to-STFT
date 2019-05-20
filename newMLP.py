@@ -91,7 +91,7 @@ class Training():
                     state.optimizer.step()
 
                 if (file_number % state.epochs_per_save) == (state.epochs_per_save - 1):
-                    print("===> model saved", state.model_storage + state.modelname + str(epoch))
+                    print("===> model saved", state.model_storage + state.modelname + str(file_number))
                     torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(file_number))
                 loss_np = np.array(loss_list)
                 average_loss = np.average(loss_np)
