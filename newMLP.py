@@ -31,7 +31,7 @@ class StateClass():
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= "./inWav/"
         self.file_iterations_per_loss = None
-        self.epochs_per_save = None
+        self.iterations_per_save = None
         self.epochs_per_learning_change = 500
         self.result_filename = "result_audio"
         self.normalization_test_filename = "normalization_test_audio"
@@ -74,48 +74,41 @@ class LinearRegressionModel(nn.Module):
 
 class Training():
     def __init__(self,state):
-        file_number = 0
+        iterations = 0
         loss_list = []
         for epoch in range(state.epochs):
-            for dataloader in state.dataloaders:
-                file_number +=1
-                for i,(mel,stft) in enumerate(dataloader):
-                    mel = mel.cuda()
-                    stft = stft.cuda()
-                    state.optimizer.zero_grad()
-                    output_model = state.model(mel)
 
-                    loss = state.criterion(output_model, stft)
-                    loss.backward()
-                    loss_list.append(loss.data.cpu().numpy())
-                    state.optimizer.step()
+            for i,(mel,stft) in enumerate(state.dataloaders):
+                mel = mel.cuda()
+                stft = stft.cuda()
+                state.optimizer.zero_grad()
+                output_model = state.model(mel)
+                loss = state.criterion(output_model, stft)
+                loss.backward()
+                loss_list.append(loss.data.cpu().numpy())
+                state.optimizer.step()
 
-                if (file_number % state.epochs_per_save) == (state.epochs_per_save - 1):
-                    print("===> model saved", state.model_storage + state.modelname + str(file_number))
-                    torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(file_number))
-                loss_np = np.array(loss_list)
-                average_loss = np.average(loss_np)
-                print('file_number {}, loss {}'.format(file_number, average_loss))
-                log_file = open(state.lossfile, 'a')
-                log_file.write(state.modelname + str(file_number) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-                loss_list = []
-            print("---------------------------------------------------------")
-            print("------------------epoch:"+ str(epoch)+"-----------------------")
-
-            if (epoch % state.epochs_per_learning_change) == state.epochs_per_learning_change-1:
-                if average_loss >= state.last_loss :
-                    state.learning_rate =int(state.learning_rate *-0.5)
-                    print("learning_rate changed to"+str(state.learning_rate))
-                    state.last_loss = average_loss
+                if(iterations%200 == 0):
+                    loss_np = np.array(loss_list)
+                    average_loss = np.average(loss_np)
+                    print('file_number {}, loss {}'.format(iterations, average_loss))
+                    log_file = open(state.lossfile, 'a')
+                    log_file.write(
+                        state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
+                    loss_list = []
+                if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
+                    print("===> model saved", state.model_storage + state.modelname + str(iterations))
+                    torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(iterations))
+                iterations += 1
 
 class DataPrep():
     def loadFolder(self, state):
-
         loaded_files = []
         for filename in os.listdir(state.training_folder):
-            loaded_files.append(DataPrep.loadFile(self,state,True,False,""+state.training_folder+filename))
+            loaded_files += DataPrep.loadMelAndStft(self,state,""+state.training_folder+filename,False)
             print("Path: "+state.training_folder+filename)
-        state.dataloaders = loaded_files
+        #print(loaded_files.shape)
+        state.dataloaders = DataLoader(loaded_files,batch_size=1,shuffle=shuffle)
 
     def loadFile(self,state,shuffle,should_plot,filename):
         mel_and_stft = DataPrep.loadMelAndStft(self,state,filename,should_plot)
@@ -207,8 +200,8 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10H")
-    parser.add_argument('-sf', '--single_file', default="./reserveWav/arctic_indian_man16.wav")
-    parser.add_argument('-eps', '--epochsPerSave', default=30,type=int)
+    parser.add_argument('-sf', '--single_file', default="./reserveWav/LJ009-0229.wav")
+    parser.add_argument('-ips', '--iterationsPerSave', default=10000,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
     parser.add_argument('-c', '--modelCheckpoint', default="")
@@ -226,7 +219,7 @@ if __name__ == "__main__":
     state.training_folder = args.trainingFolder
     state.modelname= args.modelname
     state.single_file= args.single_file
-    state.epochs_per_save= args.epochsPerSave
+    state.iterations_per_save= args.iterationsPerSave
     state.learningRate= args.learningRate
     state.lossfile= args.lossfile
     state.model_storage= args.modelStorage
