@@ -15,7 +15,7 @@ class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 7 * 128
+        self.model_input_size = 3075
         self.model_output_size = 1025
         self.last_loss = 999999
         self.dataloaders = None
@@ -125,18 +125,19 @@ class DataPrep():
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
         DataPrep.printDebug(self,mel_in, sr, state, stft_in)
-
-        mel_in = np.swapaxes(mel_in, 0, 1)
+        fb = librosa.filters.mel(22050, 2048)
+        stft_again = np.dot(np.swapaxes(fb, 0, 1), mel_in)
+        stft_again = np.swapaxes(stft_again, 0, 1)
         stft_in = np.swapaxes(stft_in, 0, 1)
 
         mel_and_stft = []
-        input_overlap_per_side = 3
-        for element in range(mel_in.shape[0]):
-            if(element > input_overlap_per_side and element <  mel_in.shape[0]-input_overlap_per_side):
+        input_overlap_per_side = 1
+        for element in range(stft_again.shape[0]):
+            if(element > input_overlap_per_side and element <  stft_again.shape[0]-input_overlap_per_side):
                 mel_in_with_overlap = []
                 for number in range(input_overlap_per_side*2+1):
                     actual_mel_index = element - input_overlap_per_side + number
-                    mel_in_with_overlap.append(mel_in[actual_mel_index])
+                    mel_in_with_overlap.append(stft_again[actual_mel_index])
                 mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
                 stft_in =np.asarray(stft_in, dtype=np.float32)
                 mel_and_stft.append([mel_in_with_overlap,stft_in[element]])
