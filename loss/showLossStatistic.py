@@ -23,7 +23,7 @@ for loss_file,name in loss_files:
     for line in loss_file:
         value = line.split(',')[1]
         lineNumber +=1
-        if (float(value) < 2):
+        if (float(value) < 10):
             allX.append(lineNumber)
             allY.append(float(value))
         if lineNumber %100 == 0:
