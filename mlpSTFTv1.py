@@ -6,6 +6,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 import librosa
 import librosa.display
+import librosa.feature
 import matplotlib.pyplot as plt
 import os
 from random import shuffle
