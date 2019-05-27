@@ -60,16 +60,19 @@ class LinearRegressionModel(nn.Module):
         print("output_dim", output_dim)
         hidden_layer_size = input_dim * first_hidden_layer_factor
         second_hidden_layer_size = input_dim * second_hidden_layer_factor
-        self.linear1 = nn.Linear(input_dim, hidden_layer_size)
-        self.linear2 = nn.Linear(hidden_layer_size, hidden_layer_size)
-        self.linear3 = nn.Linear(hidden_layer_size, second_hidden_layer_size)
-        self.linear4 = nn.Linear(second_hidden_layer_size, output_dim)
+
+        self.sequencial =nn.Sequential(
+            nn.Linear(input_dim, hidden_layer_size),
+            nn.ReLU(),
+            nn.Linear(hidden_layer_size, hidden_layer_size),
+            nn.ReLU(),
+            nn.Linear(hidden_layer_size, second_hidden_layer_size),
+            nn.ReLU(),
+            nn.Linear(second_hidden_layer_size, output_dim)
+        )
 
     def forward(self, x):
-        x = f.relu(self.linear1(x))
-        x = f.relu(self.linear2(x))
-        x = f.relu(self.linear3(x))
-        out = self.linear4(x)
+        out = self.sequencial(x)
         return out
 
 class Training():
@@ -108,7 +111,7 @@ class DataPrep():
             loaded_files += DataPrep.loadMelAndStft(self,state,""+state.training_folder+filename,False)
             print("Path: "+state.training_folder+filename)
         #print(loaded_files.shape)
-        state.dataloaders = DataLoader(loaded_files,batch_size=1,shuffle=shuffle)
+        state.dataloaders = DataLoader(loaded_files,batch_size=1000,shuffle=shuffle)
         loaded_files = []
 
     def loadFile(self,state,shuffle,should_plot,filename):
@@ -205,7 +208,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10H")
-    parser.add_argument('-sf', '--single_file', default="./reserveWav/LJ009-0230.wav")
+    parser.add_argument('-sf', '--single_file', default="./reserveWav/arctic_indian_man16.wav")
     parser.add_argument('-ips', '--iterationsPerSave', default=10000,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
