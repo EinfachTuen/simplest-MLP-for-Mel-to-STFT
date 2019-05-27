@@ -39,7 +39,6 @@ class StateClass():
         self.lossfile = 'loss_log.txt'
         self.debug = False
 
-
     def do_inference(self):
         self.single_dataloader = DataPrep.loadFile(None,self,False,True,state.single_file)
         generateAudioFromMel = GenerateAudioFromMel()
@@ -80,7 +79,7 @@ class Training():
         iterations = 0
         loss_list = []
         for epoch in range(state.epochs):
-
+            print("<===================== epoch: "+str(epoch)+" started =====================>")
             for i,(mel,stft) in enumerate(state.dataloaders):
                 mel = mel.cuda()
                 stft = stft.cuda()
@@ -94,7 +93,7 @@ class Training():
                 if(iterations%200 == 0):
                     loss_np = np.array(loss_list)
                     average_loss = np.average(loss_np)
-                    print('file_number {}, loss {}'.format(iterations, average_loss))
+                    print('iteration {}, loss {}'.format(iterations, average_loss))
                     log_file = open(state.lossfile, 'a')
                     log_file.write(
                         state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
@@ -111,7 +110,7 @@ class DataPrep():
             loaded_files += DataPrep.loadMelAndStft(self,state,""+state.training_folder+filename,False)
             print("Path: "+state.training_folder+filename)
         #print(loaded_files.shape)
-        state.dataloaders = DataLoader(loaded_files,batch_size=1000,shuffle=shuffle)
+        state.dataloaders = DataLoader(loaded_files,batch_size=500,shuffle=shuffle)
         loaded_files = []
 
     def loadFile(self,state,shuffle,should_plot,filename):
@@ -208,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10H")
-    parser.add_argument('-sf', '--single_file', default="./reserveWav/arctic_indian_man16.wav")
+    parser.add_argument('-sf', '--single_file', default="./reserveWav/LJ044-0079.wav")
     parser.add_argument('-ips', '--iterationsPerSave', default=10000,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")

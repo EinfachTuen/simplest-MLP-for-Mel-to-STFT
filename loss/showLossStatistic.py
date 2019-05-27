@@ -3,18 +3,15 @@ import numpy as np
 loss_files =[]
 #loss_files.append(open("loss-log.txt", "r"))
 #loss_files.append(open("loss-log2.txt", "r"))
-loss_files.append((open("loss-local-new-dataloader.txt", "r"),"loss-relu-new-dataloader"))
-loss_files.append((open("loss-softsign-data.txt", "r"),"loss-softsign-data"))
+#loss_files.append((open("loss-local-new-dataloader.txt", "r"),"loss-relu-new-dataloader"))
+#loss_files.append((open("loss-softsign-data.txt", "r"),"loss-softsign-data"))
 #loss_files.append((open("loss-newDataloader-10h.txt", "r"),"loss-online-10h-new-Dataloader-Relu"))
 #loss_files.append((open("loss-reluMoreData.txt", "r"),"loss-reluMoreData.txt"))
-loss_files.append((open("loss-stft-in-improved.txt", "r"),"loss-stft-in-improved.txt"))
+#loss_files.append((open("loss-stft-in-improved.txt", "r"),"loss-stft-in-improved.txt"))
+loss_files.append((open("loss-seq-b500-h5-500files.txt", "r"),"loss-seq-b500-h5-500files.txt"))
+loss_files.append((open("loss-seq-b500-h5-1-500files.txt", "r"),"loss-seq-b500-h5-1-500files.txt"))
 #loss_files.append((open("loss-elu.txt", "r"),"loss-relu-more-data"))
 #loss_files.append((open("loss-relu-larger-data.txt", "r"),"loss-relu-larger-data.txt"))
-
-
-
-allLines =[]
-
 
 file_number = 0
 for loss_file,name in loss_files:
