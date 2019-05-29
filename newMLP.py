@@ -79,7 +79,7 @@ class Training():
         iterations = 0
         loss_list = []
         for epoch in range(state.epochs):
-            print("<===================== epoch: "+str(epoch)+" started =====================>")
+            #print("<===================== epoch: "+str(epoch)+" started =====================>")
             for i,(mel,stft) in enumerate(state.dataloaders):
                 mel = mel.cuda()
                 stft = stft.cuda()
@@ -122,7 +122,7 @@ class DataPrep():
     def loadMelAndStft(self,state,filename,should_plot):
         wav, sr = librosa.load(filename)
         state.sampling_rate = sr
-        stft_in = librosa.stft(wav)
+        stft_in = np.abs(librosa.stft(wav))
         mel_in = librosa.feature.melspectrogram(S=stft_in)
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10H")
-    parser.add_argument('-sf', '--single_file', default="./reserveWav/LJ044-0079.wav")
+    parser.add_argument('-sf', '--single_file', default="./reserveWav/16kLJ019-0125.wav")
     parser.add_argument('-ips', '--iterationsPerSave', default=10000,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
