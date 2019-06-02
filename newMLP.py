@@ -123,7 +123,7 @@ class DataPrep():
         wav, sr = librosa.load(filename)
         state.sampling_rate = sr
         stft_in = librosa.stft(wav)
-        mel_in = librosa.feature.melspectrogram(np.abs(S=stft_in))
+        mel_in = librosa.feature.melspectrogram(S=np.abs(stft_in))
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
         DataPrep.printDebug(self,mel_in, sr, state, stft_in)
