@@ -24,7 +24,7 @@ class StateClass():
         self.second_hidden_layer_factor = second_hidden_layer_factor
         self.model = LinearRegressionModel(self.model_input_size, self.model_output_size,first_hidden_layer_factor,second_hidden_layer_factor).cuda()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.L1Loss()
         self.modelname= "MLP-ADAM-MSE-10Hidden"
         self.model_to_load= ""
         self.model_storage =""
