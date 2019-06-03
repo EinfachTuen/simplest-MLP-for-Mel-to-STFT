@@ -60,7 +60,7 @@ class data:
         self.file_list = os.listdir(self.training_folder)
         self.time_before = time.time()
         self.step = 0
-        self.file_batch_size = 100
+        self.file_batch_size = 500
         self.queue = mp.Queue()
         self.next = None
         self.process = None
@@ -112,16 +112,7 @@ class data:
         self.startNextDataStepProcess()
         return batches
 
-if __name__ == '__main__':
-    data = data()
-    data.startFileLoaderProcess()
-    print("actual len 1: ",len(data.giveData()))
-    print("actual len 2: ",len(data.giveData()))
-    print("actual len 3: ",len(data.giveData()))
-    print("actual len 4: ",len(data.giveData()))
-    print("actual len 5: ",len(data.giveData()))
-    print("actual len 6: ",len(data.giveData()))
-    print("actual len 7: ",len(data.giveData()))
+
 
 
 

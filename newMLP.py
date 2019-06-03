@@ -9,13 +9,15 @@ import librosa.display
 import matplotlib.pyplot as plt
 import os
 from random import shuffle
+from dataloader import data
+from experimentData import DataSet
 
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 7 * 128
+        self.model_input_size = 3 * 128
         self.model_output_size = 1025
         self.last_loss = 999999
         self.dataloaders = None
@@ -38,6 +40,7 @@ class StateClass():
         self.sampling_rate = 22050
         self.lossfile = 'loss_log.txt'
         self.debug = False
+        self.data = None
 
     def do_inference(self):
         self.single_dataloader = DataPrep.loadFile(None,self,False,True,state.single_file)
@@ -105,11 +108,9 @@ class Training():
 
 class DataPrep():
     def loadFolder(self, state):
-        loaded_files = []
-        for filename in os.listdir(state.training_folder):
-            loaded_files += DataPrep.loadMelAndStft(self,state,""+state.training_folder+filename,False)
-            print("Path: "+state.training_folder+filename)
-        #print(loaded_files.shape)
+        DataS = DataSet()
+        loaded_files = DataS.main()
+        print(len(loaded_files))
         state.dataloaders = DataLoader(loaded_files,batch_size=500,shuffle=shuffle)
         loaded_files = []
 
@@ -132,7 +133,7 @@ class DataPrep():
         stft_in = np.swapaxes(stft_in, 0, 1)
 
         mel_and_stft = []
-        input_overlap_per_side = 3
+        input_overlap_per_side = 31
         for element in range(mel_in.shape[0]):
             if(element > input_overlap_per_side and element <  mel_in.shape[0]-input_overlap_per_side):
                 mel_in_with_overlap = []
@@ -231,7 +232,6 @@ if __name__ == "__main__":
     state.lossfile= args.lossfile
     state.model_storage= args.modelStorage
     state.debug= args.debug
-
     if args.modelCheckpoint != "":
         if args.training:
             state.model.load_state_dict(torch.load(args.modelCheckpoint))
