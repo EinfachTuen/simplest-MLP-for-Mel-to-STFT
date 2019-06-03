@@ -19,12 +19,6 @@ class subprocess:
         self.end_read = end_read
         self.readFiles()
 
-    def convert_to_float(self,array):
-        newArray =[]
-        for element in array:
-            newArray.append((element.real,element.imag))
-        return np.asarray(newArray, dtype=np.float32)
-
     def loadMelAndStft(self, filename):
         wav, sr = librosa.load(filename)
         stft_in = librosa.stft(wav)
@@ -43,9 +37,9 @@ class subprocess:
                 for number in range(input_overlap_per_side * 2 + 1):
                     actual_mel_index = element - input_overlap_per_side + number
                     mel_in_with_overlap.append(mel_in[actual_mel_index])
-                mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.complex64).flatten()
-                stft_in = np.asarray(stft_in, dtype=np.complex64)
-                mel_and_stft.append([self.convert_to_float(mel_in_with_overlap), self.convert_to_float(stft_in[element])])
+                mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
+                stft_in = np.asarray(stft_in, dtype=np.float32)
+                mel_and_stft.append([mel_in_with_overlap, stft_in[element]])
         return mel_and_stft
 
     def readFiles(self):
