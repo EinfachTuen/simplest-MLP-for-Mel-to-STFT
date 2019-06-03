@@ -7,11 +7,9 @@ import time
 import multiprocessing as mp
 from tempfile import TemporaryFile
 
-loaded_files = []
-training_folder = './inWav/'
-
 class DataSet():
-    def __init__(self):
+    def __init__(self,training_folder):
+        self.training_folder = training_folder
         print("load Data")
 
     def loadMelAndStft(self,filename):
@@ -44,14 +42,14 @@ class DataSet():
         print("file_list ",str(len(file_list)))
         load = []
         for filename in file_list[start:end]:
-            load += self.loadMelAndStft(training_folder+filename)
+            load += self.loadMelAndStft(self.training_folder+filename)
             print("Path: " + filename)
         queue.put(load)
         print("finished")
 
     def main(self):
         queue = mp.Queue()
-        file_list = os.listdir(training_folder)
+        file_list = os.listdir(self.training_folder)
 
         time_before = time.time()
         processes = []

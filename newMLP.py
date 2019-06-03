@@ -108,7 +108,7 @@ class Training():
 
 class DataPrep():
     def loadFolder(self, state):
-        DataS = DataSet()
+        DataS = DataSet(state.training_folder)
         loaded_files = DataS.main()
         print(len(loaded_files))
         state.dataloaders = DataLoader(loaded_files,batch_size=500,shuffle=shuffle)
