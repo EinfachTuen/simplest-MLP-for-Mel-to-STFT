@@ -82,7 +82,7 @@ class Training():
         iterations = 0
         loss_list = []
         for epoch in range(state.epochs):
-            #print("<===================== epoch: "+str(epoch)+" started =====================>")
+            print("<===================== epoch: "+str(epoch)+" started =====================>")
             for i,(mel,stft) in enumerate(state.dataloaders):
                 mel = mel.cuda()
                 stft = stft.cuda()
