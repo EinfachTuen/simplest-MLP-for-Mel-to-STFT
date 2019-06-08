@@ -6,10 +6,18 @@ import numpy as np
 import time
 import multiprocessing as mp
 from tempfile import TemporaryFile
+from torch.utils.data import DataLoader
 
 class DataSet():
     def __init__(self,training_folder):
         self.training_folder = training_folder
+        self.actualLoadedData = []
+        self.file_list = os.listdir(self.training_folder)
+        self.file_batch_size = 50
+        self.steps = int(len(self.file_list) / self.file_batch_size) + 1
+        self.steps_per_run = 10
+        self.step = 0
+        self.shuffle = False
 
     def loadMelAndStft(self,filename):
         wav, sr = librosa.load(filename)
@@ -46,27 +54,27 @@ class DataSet():
         return load
 
     def main(self):
-        file_list = os.listdir(self.training_folder)
-
-        file_batch_size = 50
-        steps = int(len(file_list) / file_batch_size) + 1
-        print(steps)
         pool_size = mp.cpu_count() * 2
 
         pool = mp.Pool(processes=pool_size)
         batched_file_list = []
-        for file_batch in range(steps):
+
+        max_step_this_run = self.step + self.steps_per_run
+
+        for step in range(self.step,max_step_this_run):
             batch_file_list = []
-            start_read = file_batch * file_batch_size
+            start_read = step * self.file_batch_size
 
-            end_read = file_batch * file_batch_size + file_batch_size
-            if len(file_list) < end_read:
-                end_read = len(file_list)
+            end_read = step * self.file_batch_size + self.file_batch_size
+            if len(self.file_list) < end_read:
+                end_read = len(self.file_list)
 
-            for filename in file_list[start_read:end_read]:
+            for filename in self.file_list[start_read:end_read]:
                 batch_file_list.append(filename)
 
             batched_file_list.append(batch_file_list)
+
+        self.step = max_step_this_run%self.steps
 
         result_map = pool.map(self.readFiles, batched_file_list)
 
@@ -75,6 +83,6 @@ class DataSet():
         result_list = []
         for result in result_map:
             result_list += result
-        return result_list
+        return DataLoader(result_list, batch_size=500, shuffle=self.shuffle)
 
 

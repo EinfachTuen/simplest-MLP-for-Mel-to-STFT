@@ -9,7 +9,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import os
 from random import shuffle
-from dataloader import data
+
 from workerPool import DataSet
 
 
@@ -20,7 +20,6 @@ class StateClass():
         self.model_input_size = 3 * 128
         self.model_output_size = 1025
         self.last_loss = 999999
-        self.dataloaders = None
         self.single_dataloader = None
         self.first_hidden_layer_factor = first_hidden_layer_factor
         self.second_hidden_layer_factor = second_hidden_layer_factor
@@ -32,6 +31,7 @@ class StateClass():
         self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= "./inWav/"
+        self.workerPool = DataSet(self.training_folder)
         self.file_iterations_per_loss = None
         self.iterations_per_save = None
         self.epochs_per_learning_change = 500
@@ -52,7 +52,6 @@ class StateClass():
 
 
     def run_training(self):
-        DataPrep.loadFolder(None,self)
         Training(self)
 
 class LinearRegressionModel(nn.Module):
@@ -83,36 +82,32 @@ class Training():
         loss_list = []
         for epoch in range(state.epochs):
             print("<===================== epoch: "+str(epoch)+" started =====================>")
-            for i,(mel,stft) in enumerate(state.dataloaders):
-                mel = mel.cuda()
-                stft = stft.cuda()
-                state.optimizer.zero_grad()
-                output_model = state.model(mel)
-                loss = state.criterion(output_model, stft)
-                loss.backward()
-                loss_list.append(loss.data.cpu().numpy())
-                state.optimizer.step()
+            data = state.workerPool.main()
+            for i in range(50):
+                for j,(mel,stft) in enumerate(data):
+                    mel = mel.cuda()
+                    stft = stft.cuda()
+                    state.optimizer.zero_grad()
+                    output_model = state.model(mel)
+                    loss = state.criterion(output_model, stft)
+                    loss.backward()
+                    loss_list.append(loss.data.cpu().numpy())
+                    state.optimizer.step()
 
-                if(iterations%200 == 0):
-                    loss_np = np.array(loss_list)
-                    average_loss = np.average(loss_np)
-                    print('iteration {}, loss {}'.format(iterations, average_loss))
-                    log_file = open(state.lossfile, 'a')
-                    log_file.write(
-                        state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-                    loss_list = []
-                if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
-                    print("===> model saved", state.model_storage + state.modelname + str(iterations))
-                    torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(iterations))
-                iterations += 1
+                    if(iterations%200 == 0):
+                        loss_np = np.array(loss_list)
+                        average_loss = np.average(loss_np)
+                        print('iteration {}, loss {}'.format(iterations, average_loss))
+                        log_file = open(state.lossfile, 'a')
+                        log_file.write(
+                            state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
+                        loss_list = []
+                    if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
+                        print("===> model saved", state.model_storage + state.modelname + str(iterations))
+                        torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(iterations))
+                    iterations += 1
 
 class DataPrep():
-    def loadFolder(self, state):
-        DataS = DataSet(state.training_folder)
-        loaded_files = DataS.main()
-        print(len(loaded_files))
-        state.dataloaders = DataLoader(loaded_files,batch_size=500,shuffle=shuffle)
-        loaded_files = []
 
     def loadFile(self,state,shuffle,should_plot,filename):
         mel_and_stft = DataPrep.loadMelAndStft(self,state,filename,should_plot)
