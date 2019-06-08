@@ -10,8 +10,6 @@ from tempfile import TemporaryFile
 class DataSet():
     def __init__(self,training_folder):
         self.training_folder = training_folder
-        self.main()
-        print("load Data")
 
     def loadMelAndStft(self,filename):
         wav, sr = librosa.load(filename)
@@ -77,9 +75,6 @@ class DataSet():
         result_list = []
         for result in result_map:
             result_list += result
-
-
         return result_list
-if __name__ == '__main__':
-    d = DataSet('./inWav/')
+
 

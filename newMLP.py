@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import os
 from random import shuffle
 from dataloader import data
-from experimentData import DataSet
+from workerPool import DataSet
 
 
 class StateClass():
