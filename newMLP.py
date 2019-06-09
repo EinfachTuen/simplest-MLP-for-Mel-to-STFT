@@ -14,7 +14,7 @@ from workerPool import DataSet
 
 
 class StateClass():
-    def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor):
+    def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
         self.epochs = 100000
         self.learning_rate = 0.001
         self.model_input_size = 3 * 128
@@ -30,7 +30,7 @@ class StateClass():
         self.model_to_load= ""
         self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
-        self.training_folder= "./inWav/"
+        self.training_folder= trainingFolder
         self.workerPool = DataSet(self.training_folder)
         self.file_iterations_per_loss = None
         self.iterations_per_save = None
@@ -217,9 +217,8 @@ if __name__ == "__main__":
     parser.set_defaults(inference=False)
     args = parser.parse_args()
 
-    state = StateClass(args.firstHiddenlayer,args.secondHiddenlayer)
+    state = StateClass(args.firstHiddenlayer,args.secondHiddenlayer,args.trainingFolder)
     print('Model Storage', args.modelStorage)
-    state.training_folder = args.trainingFolder
     state.modelname= args.modelname
     state.single_file= args.single_file
     state.iterations_per_save= args.iterationsPerSave
