@@ -129,11 +129,11 @@ class DataPrep():
         mel_in = np.array(mel_in)
         DataPrep.printDebug(self,mel_in, sr, state, stft_in)
 
-        mel_in = np.swapaxes(mel_in, 0, 1)
+        mel_in = np.swapaxes(np.abs(mel_in), 0, 1)
         stft_in = np.swapaxes(stft_in, 0, 1)
 
         mel_and_stft = []
-        input_overlap_per_side = 31
+        input_overlap_per_side = 1
         for element in range(mel_in.shape[0]):
             if(element > input_overlap_per_side and element <  mel_in.shape[0]-input_overlap_per_side):
                 mel_in_with_overlap = []
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="MLP-ADAM-MSE-10H")
-    parser.add_argument('-sf', '--single_file', default="./reserveWav/LJ009-0229.wav")
+    parser.add_argument('-sf', '--single_file', default="./reserveWav/16kLJ001-0001.wav")
     parser.add_argument('-ips', '--iterationsPerSave', default=10000,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
