@@ -44,12 +44,10 @@ class DataSet():
         return mel_and_stft
 
     def readFiles(self,file_list):
-        print("file_list ",str(len(file_list)))
         load = []
 
         for filename in file_list:
             load += self.loadMelAndStft(self.training_folder+filename)
-            print("Path: " + filename)
 
         return load
 
