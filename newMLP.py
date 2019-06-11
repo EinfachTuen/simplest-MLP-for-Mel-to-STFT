@@ -13,10 +13,6 @@ from random import shuffle
 from workerPool import DataSet
 from multiThreadDataset import AudioDataset
 
-import sys
-
-
-
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
         self.epochs = 100000
