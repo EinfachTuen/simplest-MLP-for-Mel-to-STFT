@@ -22,6 +22,7 @@ class AudioDataset(Dataset):
         self.file_number = 0
         self.max_threads = multiprocessing.cpu_count() -1
 
+
     def initialize(self):
         for run in range(self.max_threads):
             self.try_update()
@@ -56,6 +57,8 @@ class AudioDataset(Dataset):
             self.file_number = self.file_number % len(self.file_list)
 
     def loadMelAndStft(self, file_number):
+        import warnings
+        warnings.filterwarnings('ignore')
         filename = self.training_folder + self.file_list[file_number]
         wav, sr = librosa.load(filename)
         stft_in = np.real(librosa.stft(wav))
