@@ -59,9 +59,11 @@ class AudioDataset(Dataset):
     def loadMelAndStft(self, file_number):
         import warnings
         warnings.filterwarnings('ignore')
+
+
         filename = self.training_folder + self.file_list[file_number]
         wav, sr = librosa.load(filename)
-        stft_in = np.real(librosa.stft(wav))
+        stft_in = np.abs(librosa.stft(wav))
         mel_in = np.abs(librosa.feature.melspectrogram(S=stft_in))
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
