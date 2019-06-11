@@ -13,6 +13,9 @@ from random import shuffle
 from workerPool import DataSet
 from multiThreadDataset import AudioDataset
 
+import sys
+
+
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
@@ -199,6 +202,12 @@ class GenerateAudioFromMel:
 
 if __name__ == "__main__":
     import argparse
+
+    if not sys.warnoptions:
+        import warnings
+
+        warnings.simplefilter("ignore")
+
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', "--training", dest='training', action='store_true')

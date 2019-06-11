@@ -7,12 +7,6 @@ import time
 from torch.utils.data import Dataset
 import multiprocessing
 
-import sys
-
-if not sys.warnoptions:
-    import warnings
-    warnings.simplefilter("ignore")
-
 class AudioDataset(Dataset):
     def __init__(self, training_folder):
         """
