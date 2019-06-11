@@ -24,7 +24,7 @@ class StateClass():
         self.single_dataloader = None
         self.first_hidden_layer_factor = first_hidden_layer_factor
         self.second_hidden_layer_factor = second_hidden_layer_factor
-        self.model = LinearRegressionModel(self.model_input_size, self.model_output_size,first_hidden_layer_factor,second_hidden_layer_factor).cuda()
+        self.model = LinearRegressionModel(self.model_input_size, self.model_output_size,first_hidden_layer_factor,second_hidden_layer_factor)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
         self.modelname= "MLP-ADAM-MSE-10Hidden"
@@ -88,8 +88,8 @@ class Training():
         loss_list = []
         for epoch in range(state.epochs):
             for i, (mel, stft,) in enumerate(state.single_dataloader):
-                mel = mel.cuda()
-                stft = stft.cuda()
+                mel = mel
+                stft = stft
                 state.optimizer.zero_grad()
                 output_model = state.model(mel)
                 loss = state.criterion(output_model, stft)
@@ -168,11 +168,9 @@ class GenerateAudioFromMel:
         state.model = LinearRegressionModel(state.model_input_size, state.model_output_size,state.first_hidden_layer_factor, state.second_hidden_layer_factor)
         print("load model", state.model_to_load)
         state.model.load_state_dict(torch.load(state.model_to_load))
-        state.model.cuda()
         state.model.eval()
 
         for i, (mel,stft) in enumerate(state.single_dataloader):
-            mel = mel.cuda()
             stft_part = state.model(mel).cpu().detach().numpy()
             stft_list.append(stft_part[0])
 
@@ -232,7 +230,6 @@ if __name__ == "__main__":
     if args.modelCheckpoint != "":
         if args.training:
             state.model.load_state_dict(torch.load(args.modelCheckpoint))
-            state.model.cuda()
             state.model.eval()
         if args.inference:
             state.model_to_load = args.modelCheckpoint
