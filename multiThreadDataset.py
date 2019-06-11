@@ -22,7 +22,7 @@ class AudioDataset(Dataset):
         self.file_number = 0
 
     def initialize(self):
-        for run in range(50):
+        for run in range(8):
             self.try_update()
         print("initializing dataloader")
         time.sleep(15)
@@ -81,16 +81,6 @@ class AudioDataset(Dataset):
             del self.data[0: len(mel_and_stft)]
         self.data += mel_and_stft
 
-
-if __name__ == "__main__":
-    audioSet = AudioDataset("./inWav/")
-    #audioSet.loadMelAndStft(0)
-    audioSet.initialize()
-
-    while(True):
-        audioSet.__getitem__(5)
-        print(audioSet.__len__())
-        print(audioSet.threadCount())
 
 
 
