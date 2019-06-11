@@ -75,8 +75,8 @@ class AudioDataset(Dataset):
                 for number in range(input_overlap_per_side * 2 + 1):
                     actual_mel_index = element - input_overlap_per_side + number
                     mel_in_with_overlap.append(mel_in[actual_mel_index])
-                mel_in_with_overlap = np.asarray(mel_in_with_overlap).flatten()
-                stft_in = np.asarray(stft_in)
+                mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
+                stft_in = np.asarray(stft_in, dtype=np.float32)
                 mel_and_stft.append([mel_in_with_overlap, stft_in[element]])
 
         if(len(self.data) > 60000):
