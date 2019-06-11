@@ -42,14 +42,14 @@ class StateClass():
         self.debug = False
         self.data = None
 
-    def do_inference(self):
-        self.single_dataloader = DataPrep.loadFile(None,self,False,True,state.single_file)
-        generateAudioFromMel = GenerateAudioFromMel()
-        GenerateAudioFromMel.load_and_inference_and_convert(generateAudioFromMel,self)
-        print("-----------------------------------")
-        print("inference finished")
-        print("-----------------------------------")
-
+    # def do_inference(self):
+    #     self.single_dataloader = DataPrep.loadFile(None,self,False,True,state.single_file)
+    #     generateAudioFromMel = GenerateAudioFromMel()
+    #     GenerateAudioFromMel.load_and_inference_and_convert(generateAudioFromMel,self)
+    #     print("-----------------------------------")
+    #     print("inference finished")
+    #     print("-----------------------------------")
+    #
 
     def run_training(self):
         dataset = AudioDataset(self.training_folder)
@@ -109,91 +109,91 @@ class Training():
                     torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(iterations))
                 iterations += 1
 
-class DataPrep():
+# class DataPrep():
+#
+#     def loadFile(self,state,shuffle,should_plot,filename):
+#         mel_and_stft = DataPrep.loadMelAndStft(self,state,filename,should_plot)
+#         return  DataLoader(mel_and_stft,
+#                                 batch_size=1,
+#                                 shuffle=shuffle)
+#
+#     def loadMelAndStft(self,state,filename,should_plot):
+#         wav, sr = librosa.load(filename)
+#         state.sampling_rate = sr
+#         stft_in = librosa.stft(wav)
+#         mel_in = librosa.feature.melspectrogram(S=stft_in)
+#         stft_in = np.array(stft_in)
+#         mel_in = np.array(mel_in)
+#         # DataPrep.printDebug(self,mel_in, sr, state, stft_in)
+#
+#         mel_in = np.swapaxes(np.abs(mel_in), 0, 1)
+#         stft_in = np.swapaxes(stft_in, 0, 1)
+#
+#         mel_and_stft = []
+#         input_overlap_per_side = 1
+#         for element in range(mel_in.shape[0]):
+#             if(element > input_overlap_per_side and element <  mel_in.shape[0]-input_overlap_per_side):
+#                 mel_in_with_overlap = []
+#                 for number in range(input_overlap_per_side*2+1):
+#                     actual_mel_index = element - input_overlap_per_side + number
+#                     mel_in_with_overlap.append(mel_in[actual_mel_index])
+#                 mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
+#                 stft_in =np.asarray(stft_in, dtype=np.float32)
+#                 mel_and_stft.append([mel_in_with_overlap,stft_in[element]])
+#         return mel_and_stft
 
-    def loadFile(self,state,shuffle,should_plot,filename):
-        mel_and_stft = DataPrep.loadMelAndStft(self,state,filename,should_plot)
-        return  DataLoader(mel_and_stft,
-                                batch_size=1,
-                                shuffle=shuffle)
-
-    def loadMelAndStft(self,state,filename,should_plot):
-        wav, sr = librosa.load(filename)
-        state.sampling_rate = sr
-        stft_in = librosa.stft(wav)
-        mel_in = librosa.feature.melspectrogram(S=stft_in)
-        stft_in = np.array(stft_in)
-        mel_in = np.array(mel_in)
-        DataPrep.printDebug(self,mel_in, sr, state, stft_in)
-
-        mel_in = np.swapaxes(np.abs(mel_in), 0, 1)
-        stft_in = np.swapaxes(stft_in, 0, 1)
-
-        mel_and_stft = []
-        input_overlap_per_side = 1
-        for element in range(mel_in.shape[0]):
-            if(element > input_overlap_per_side and element <  mel_in.shape[0]-input_overlap_per_side):
-                mel_in_with_overlap = []
-                for number in range(input_overlap_per_side*2+1):
-                    actual_mel_index = element - input_overlap_per_side + number
-                    mel_in_with_overlap.append(mel_in[actual_mel_index])
-                mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
-                stft_in =np.asarray(stft_in, dtype=np.float32)
-                mel_and_stft.append([mel_in_with_overlap,stft_in[element]])
-        return mel_and_stft
-
-    def printDebug(self, mel_in, sr, state, stft_in):
-        if state.debug:
-            GenerateAudioFromMel.stft_to_audio(None, state, stft_in, "Original stft", state.normalization_test_filename)
-            print("sample rate", sr)
-            stft_min = np.min(stft_in)
-            stft_max = np.max(stft_in)
-            mel_min = np.min(mel_in)
-            mel_max = np.max(mel_in)
-            print("stft_min", stft_min)
-            print("stft_max", stft_max)
-            print("mel_min", mel_min)
-            print("mel_max", mel_max)
-            print("-----------------------------------")
-            print("stft_in Size:", stft_in.shape)
-
-            print("-----------------------------------")
-            print("mel_in Shape:", mel_in.shape)
-
-
-class GenerateAudioFromMel:
-    def load_and_inference_and_convert(self, state):
-        stft_list = []
-        state.model = LinearRegressionModel(state.model_input_size, state.model_output_size,state.first_hidden_layer_factor, state.second_hidden_layer_factor)
-        print("load model", state.model_to_load)
-        state.model.load_state_dict(torch.load(state.model_to_load))
-        state.model.cuda()
-        state.model.eval()
-
-        for i, (mel,stft) in enumerate(state.single_dataloader):
-            mel = mel.cuda()
-            stft_part = state.model(mel).cpu().detach().numpy()
-            stft_list.append(stft_part[0])
-
-        stft_list = np.asarray(stft_list)
-        stft_list = np.swapaxes(stft_list, 0, 1)
-        GenerateAudioFromMel.stft_to_audio(self,state,stft_list,"Result STFT",state.result_filename)
-        print(stft_list.shape)
-
-    def stft_to_audio(self,state,stft,diagramm_name,filename):
-        wav = librosa.istft(stft)
-        librosa.output.write_wav(state.modelname+'_'+filename+".wav",wav,state.sampling_rate)
-        GenerateAudioFromMel.plotSTFT(self,stft,diagramm_name)
+    # def printDebug(self, mel_in, sr, state, stft_in):
+    #     if state.debug:
+    #         GenerateAudioFromMel.stft_to_audio(None, state, stft_in, "Original stft", state.normalization_test_filename)
+    #         print("sample rate", sr)
+    #         stft_min = np.min(stft_in)
+    #         stft_max = np.max(stft_in)
+    #         mel_min = np.min(mel_in)
+    #         mel_max = np.max(mel_in)
+    #         print("stft_min", stft_min)
+    #         print("stft_max", stft_max)
+    #         print("mel_min", mel_min)
+    #         print("mel_max", mel_max)
+    #         print("-----------------------------------")
+    #         print("stft_in Size:", stft_in.shape)
+    #
+    #         print("-----------------------------------")
+    #         print("mel_in Shape:", mel_in.shape)
 
 
-    def plotSTFT(self,stft,title):
-        plt.figure(figsize=(12, 8))
-        plt.subplot(4, 2, 1)
-        D = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
-        librosa.display.specshow(D, y_axis='linear')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title(title)
-        plt.show()
+# class GenerateAudioFromMel:
+    # def load_and_inference_and_convert(self, state):
+    #     stft_list = []
+    #     state.model = LinearRegressionModel(state.model_input_size, state.model_output_size,state.first_hidden_layer_factor, state.second_hidden_layer_factor)
+    #     print("load model", state.model_to_load)
+    #     state.model.load_state_dict(torch.load(state.model_to_load))
+    #     state.model.cuda()
+    #     state.model.eval()
+    #
+    #     for i, (mel,stft) in enumerate(state.single_dataloader):
+    #         mel = mel.cuda()
+    #         stft_part = state.model(mel).cpu().detach().numpy()
+    #         stft_list.append(stft_part[0])
+    #
+    #     stft_list = np.asarray(stft_list)
+    #     stft_list = np.swapaxes(stft_list, 0, 1)
+    #     GenerateAudioFromMel.stft_to_audio(self,state,stft_list,"Result STFT",state.result_filename)
+    #     print(stft_list.shape)
+    #
+    # def stft_to_audio(self,state,stft,diagramm_name,filename):
+    #     wav = librosa.istft(stft)
+    #     librosa.output.write_wav(state.modelname+'_'+filename+".wav",wav,state.sampling_rate)
+    #     GenerateAudioFromMel.plotSTFT(self,stft,diagramm_name)
+    #
+    #
+    # def plotSTFT(self,stft,title):
+    #     plt.figure(figsize=(12, 8))
+    #     plt.subplot(4, 2, 1)
+    #     D = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+    #     librosa.display.specshow(D, y_axis='linear')
+    #     plt.colorbar(format='%+2.0f dB')
+    #     plt.title(title)
+    #     plt.show()
 
 
 if __name__ == "__main__":
@@ -237,5 +237,5 @@ if __name__ == "__main__":
             state.model_to_load = args.modelCheckpoint
     if args.training:
         state.run_training()
-    if args.inference:
-        state.do_inference()
+    # if args.inference:
+        # state.do_inference()
