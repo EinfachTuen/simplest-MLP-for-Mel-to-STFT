@@ -5,6 +5,9 @@ import librosa
 import sys
 import time
 from torch.utils.data import Dataset
+import multiprocessing
+
+
 
 class AudioDataset(Dataset):
     def __init__(self, training_folder):
@@ -20,9 +23,10 @@ class AudioDataset(Dataset):
         self.data=[]
         self.threads = []
         self.file_number = 0
+        self.max_threads = multiprocessing.cpu_count() -1
 
     def initialize(self):
-        for run in range(8):
+        for run in range(self.max_threads):
             self.try_update()
         print("initializing dataloader")
         time.sleep(15)
@@ -47,7 +51,7 @@ class AudioDataset(Dataset):
         self.threads = alive_threads
 
     def try_update(self):
-        if(len(self.threads) < 8):
+        if(len(self.threads) < self.max_threads):
             thread = threading.Thread(target=self.loadMelAndStft,kwargs={"file_number": self.file_number})
             self.threads.append(thread)
             thread.start()
