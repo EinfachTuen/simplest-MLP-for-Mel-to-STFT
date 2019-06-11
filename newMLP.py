@@ -199,12 +199,6 @@ class GenerateAudioFromMel:
 if __name__ == "__main__":
     import argparse
 
-    if not sys.warnoptions:
-        import warnings
-
-        warnings.simplefilter("ignore")
-
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', "--training", dest='training', action='store_true')
     parser.add_argument('-d', "--debug", dest='debug', action='store_true')

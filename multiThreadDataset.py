@@ -2,7 +2,6 @@ import os
 import threading
 import numpy as np
 import librosa
-import sys
 import time
 from torch.utils.data import Dataset
 import multiprocessing
