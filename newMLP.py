@@ -11,13 +11,14 @@ import os
 from random import shuffle
 
 from workerPool import DataSet
+from multiThreadDataset import AudioDataset
 
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 3 * 128
+        self.model_input_size = 7 * 128
         self.model_output_size = 1025
         self.last_loss = 999999
         self.single_dataloader = None
@@ -52,6 +53,11 @@ class StateClass():
 
 
     def run_training(self):
+        dataset = AudioDataset(self.training_folder)
+        dataset.initialize()
+        self.single_dataloader = DataLoader(dataset,
+                                batch_size=500,
+                                shuffle=True)
         Training(self)
 
 class LinearRegressionModel(nn.Module):
@@ -81,31 +87,28 @@ class Training():
         iterations = 0
         loss_list = []
         for epoch in range(state.epochs):
-            print("<===================== epoch: "+str(epoch)+" started =====================>")
-            data = state.workerPool.main()
-            for i in range(50):
-                for j,(mel,stft) in enumerate(data):
-                    mel = mel.cuda()
-                    stft = stft.cuda()
-                    state.optimizer.zero_grad()
-                    output_model = state.model(mel)
-                    loss = state.criterion(output_model, stft)
-                    loss.backward()
-                    loss_list.append(loss.data.cpu().numpy())
-                    state.optimizer.step()
+            for i, (mel, stft,) in enumerate(state.single_dataloader):
+                mel = mel.cuda()
+                stft = stft.cuda()
+                state.optimizer.zero_grad()
+                output_model = state.model(mel)
+                loss = state.criterion(output_model, stft)
+                loss.backward()
+                loss_list.append(loss.data.cpu().numpy())
+                state.optimizer.step()
 
-                    if(iterations%200 == 0):
-                        loss_np = np.array(loss_list)
-                        average_loss = np.average(loss_np)
-                        print('iteration {}, loss {}'.format(iterations, average_loss))
-                        log_file = open(state.lossfile, 'a')
-                        log_file.write(
-                            state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-                        loss_list = []
-                    if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
-                        print("===> model saved", state.model_storage + state.modelname + str(iterations))
-                        torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(iterations))
-                    iterations += 1
+                if(iterations%200 == 0):
+                    loss_np = np.array(loss_list)
+                    average_loss = np.average(loss_np)
+                    print('iteration {}, loss {}'.format(iterations, average_loss))
+                    log_file = open(state.lossfile, 'a')
+                    log_file.write(
+                        state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
+                    loss_list = []
+                if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
+                    print("===> model saved", state.model_storage + state.modelname + str(iterations))
+                    torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(iterations))
+                iterations += 1
 
 class DataPrep():
 

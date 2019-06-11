@@ -4,8 +4,9 @@ import numpy as np
 import librosa
 import sys
 import time
+from torch.utils.data import Dataset
 
-class AudioDataset:
+class AudioDataset(Dataset):
     def __init__(self, training_folder):
         """
         Args:
@@ -46,7 +47,7 @@ class AudioDataset:
         self.threads = alive_threads
 
     def try_update(self):
-        if(len(self.threads) < 6):
+        if(len(self.threads) < 8):
             thread = threading.Thread(target=self.loadMelAndStft,kwargs={"file_number": self.file_number})
             self.threads.append(thread)
             thread.start()
@@ -57,7 +58,7 @@ class AudioDataset:
         filename = self.training_folder + self.file_list[file_number]
         wav, sr = librosa.load(filename)
         stft_in = librosa.stft(wav)
-        mel_in = librosa.feature.melspectrogram(S=stft_in)
+        mel_in = librosa.feature.melspectrogram(S=np.abs(stft_in))
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
 
@@ -65,7 +66,7 @@ class AudioDataset:
         stft_in = np.swapaxes(stft_in, 0, 1)
 
         mel_and_stft = []
-        input_overlap_per_side = 1
+        input_overlap_per_side = 3
         for element in range(mel_in.shape[0]):
             if (element > input_overlap_per_side and element < mel_in.shape[0] - input_overlap_per_side):
                 mel_in_with_overlap = []
@@ -76,7 +77,7 @@ class AudioDataset:
                 stft_in = np.asarray(stft_in, dtype=np.float32)
                 mel_and_stft.append([mel_in_with_overlap, stft_in[element]])
 
-        if(len(self.data) > 15000):
+        if(len(self.data) > 60000):
             del self.data[0: len(mel_and_stft)]
         self.data += mel_and_stft
 
