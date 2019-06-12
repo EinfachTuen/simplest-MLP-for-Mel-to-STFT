@@ -42,7 +42,6 @@ class StateClass():
         self.debug = False
         self.data = None
 
-
     def run_training(self):
         dataset = AudioDataset(self.training_folder)
         dataset.initialize()
@@ -53,8 +52,6 @@ class StateClass():
 
     def do_inference(self):
         Test(self)
-
-
 
 class LinearRegressionModel(nn.Module):
     def __init__(self, input_dim, output_dim,first_hidden_layer_factor,second_hidden_layer_factor):

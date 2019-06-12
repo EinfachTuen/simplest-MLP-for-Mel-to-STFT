@@ -5,17 +5,10 @@ import librosa
 import time
 from torch.utils.data import Dataset
 import multiprocessing
+import random
 
 class AudioDataset(Dataset):
     def __init__(self, training_folder):
-        """
-        Args:
-            csv_file (string): Path to the csv file with annotations.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
-
         self.training_folder = training_folder
         if training_folder != "":
             self.file_list = os.listdir(training_folder)
@@ -23,6 +16,7 @@ class AudioDataset(Dataset):
         self.data=[]
         self.threads = []
         self.file_number = 0
+        self.random = random.Random()
         self.max_threads = multiprocessing.cpu_count() -1
 
 
@@ -56,8 +50,7 @@ class AudioDataset(Dataset):
             thread = threading.Thread(target=self.loadDataForFilenumber,kwargs={"file_number": self.file_number})
             self.threads.append(thread)
             thread.start()
-            self.file_number += 1
-            self.file_number = self.file_number % len(self.file_list)
+            self.file_number = self.random.randint(0,len(self.file_list)-1)
 
     def loadDataForFilenumber(self, file_number):
         filename = self.training_folder + self.file_list[file_number]
