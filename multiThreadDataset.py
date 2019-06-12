@@ -15,8 +15,11 @@ class AudioDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
+
         self.training_folder = training_folder
-        self.file_list = os.listdir(training_folder)
+        if training_folder != "":
+            self.file_list = os.listdir(training_folder)
+        else: self.file_list = []
         self.data=[]
         self.threads = []
         self.file_number = 0
@@ -50,14 +53,22 @@ class AudioDataset(Dataset):
 
     def try_update(self):
         if(len(self.threads) < self.max_threads):
-            thread = threading.Thread(target=self.loadMelAndStft,kwargs={"file_number": self.file_number})
+            thread = threading.Thread(target=self.loadDataForFilenumber,kwargs={"file_number": self.file_number})
             self.threads.append(thread)
             thread.start()
             self.file_number += 1
             self.file_number = self.file_number % len(self.file_list)
 
-    def loadMelAndStft(self, file_number):
+    def loadDataForFilenumber(self, file_number):
         filename = self.training_folder + self.file_list[file_number]
+        mel_and_stft = self.loadMelAndStft(filename)
+
+        if(len(self.data) > 60000):
+            del self.data[0: len(mel_and_stft)]
+        self.data += mel_and_stft
+
+
+    def loadMelAndStft(self,filename):
         wav, sr = librosa.load(filename)
         stft_in = np.abs(librosa.stft(wav))
         mel_in = np.abs(librosa.feature.melspectrogram(S=stft_in))
@@ -78,10 +89,7 @@ class AudioDataset(Dataset):
                 mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
                 stft_in = np.asarray(stft_in, dtype=np.float32)
                 mel_and_stft.append([mel_in_with_overlap, stft_in[element]])
-
-        if(len(self.data) > 60000):
-            del self.data[0: len(mel_and_stft)]
-        self.data += mel_and_stft
+        return mel_and_stft
 
 
 
