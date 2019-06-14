@@ -56,14 +56,14 @@ class AudioDataset(Dataset):
         filename = self.training_folder + self.file_list[file_number]
         mel_and_stft = self.loadMelAndStft(filename)
 
-        if(len(self.data) > 60000):
+        if(len(self.data) > 2000000):
             del self.data[0: len(mel_and_stft)]
         self.data += mel_and_stft
 
 
     def loadMelAndStft(self,filename):
         wav, sr = librosa.load(filename)
-        stft_in = np.abs(librosa.stft(wav))
+        stft_in = librosa.stft(wav)
         mel_in = np.abs(librosa.feature.melspectrogram(S=stft_in))
         stft_in = np.array(stft_in)
         mel_in = np.array(mel_in)
