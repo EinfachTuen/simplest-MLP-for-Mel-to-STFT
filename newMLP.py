@@ -10,15 +10,14 @@ import matplotlib.pyplot as plt
 import os
 from random import shuffle
 
-from workerPool import DataSet
 from multiThreadDataset import AudioDataset
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 7 * 128
-        self.model_output_size = 1025
+        self.model_input_size = 7 * 80
+        self.model_output_size = 513
         self.last_loss = 999999
         self.single_dataloader = None
         self.first_hidden_layer_factor = first_hidden_layer_factor
@@ -31,7 +30,6 @@ class StateClass():
         self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
         self.training_folder= trainingFolder
-        self.workerPool = DataSet(self.training_folder)
         self.file_iterations_per_loss = None
         self.iterations_per_save = None
         self.epochs_per_learning_change = 500
