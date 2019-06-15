@@ -11,6 +11,7 @@ import os
 from random import shuffle
 
 from multiThreadDataset import AudioDataset
+import gc
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
@@ -45,7 +46,7 @@ class StateClass():
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=500,
-                                shuffle=True)
+                                shuffle=True,pin_memory=False)
         Training(self)
 
     def do_inference(self):
@@ -96,6 +97,7 @@ class Training():
                     log_file.write(
                         state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
                     loss_list = []
+                    gc.collect()
                 if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
                     print("===> model saved", state.model_storage + state.modelname + str(iterations))
                     torch.save(state.model.state_dict(), state.model_storage + state.modelname + str(iterations))

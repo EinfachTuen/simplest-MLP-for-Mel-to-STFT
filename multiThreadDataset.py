@@ -11,6 +11,7 @@ from scipy.io.wavfile import read
 import sys
 sys.path.insert(0, 'tacotron2')
 from tacotron2.layers import TacotronSTFT
+import gc
 
 class AudioDataset(Dataset):
     def __init__(self, training_folder):
@@ -22,14 +23,9 @@ class AudioDataset(Dataset):
         self.threads = []
         self.file_number = 0
         self.random = random.Random()
-        self.max_threads = multiprocessing.cpu_count() -1
+        self.max_threads = multiprocessing.cpu_count() - 1
         self.MAX_WAV_VALUE = 32768.0
         self.sampling_rate = 22050
-        self.stft = TacotronSTFT(filter_length=1024,
-                                 hop_length=256,
-                                 win_length=1024,
-                                 sampling_rate=22050,
-                                 mel_fmin=0.0, mel_fmax=8000.0)
 
     def initialize(self):
         for run in range(self.max_threads):
@@ -46,7 +42,11 @@ class AudioDataset(Dataset):
     def __getitem__(self, idx):
         self.kill_threads()
         self.try_update()
-        return self.data[idx]
+        try :
+            return self.data[idx]
+        except:
+            print("list index not found exception")
+            return self.data[0]
 
     def kill_threads(self):
         alive_threads = []
@@ -67,7 +67,7 @@ class AudioDataset(Dataset):
         filename = self.training_folder + self.file_list[file_number]
         mel_and_stft = self.loadMelAndStft(filename)
 
-        if(len(self.data) > 200000):
+        if(len(self.data) > 50000):
             del self.data[0: len(mel_and_stft)]
         self.data += mel_and_stft
 
@@ -76,7 +76,7 @@ class AudioDataset(Dataset):
         wav, sr = librosa.load(filename)
         stft_in = librosa.stft(wav, n_fft=1024, hop_length=256, win_length=1024)
        # mel_in = librosa.feature.melspectrogram(S=stft_in)
-        stft_in = np.array(np.abs(stft_in))
+        stft_in = np.abs(stft_in)
 
         #mel_in = np.array(mel_in)
         loadedMel = np.swapaxes(loadedMel, 0, 1)
@@ -122,6 +122,12 @@ class AudioDataset(Dataset):
         audio_norm = audio / self.MAX_WAV_VALUE
         audio_norm = audio_norm.unsqueeze(0)
         audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
-        melspec = self.stft.mel_spectrogram(audio_norm)
+        stft = TacotronSTFT(filter_length=1024,
+                     hop_length=256,
+                     win_length=1024,
+                     sampling_rate=22050,
+                     mel_fmin=0.0, mel_fmax=8000.0)
+        melspec = stft.mel_spectrogram(audio_norm)
         melspec = torch.squeeze(melspec, 0)
+
         return melspec
