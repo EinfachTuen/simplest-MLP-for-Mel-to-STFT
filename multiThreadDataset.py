@@ -83,7 +83,7 @@ class AudioDataset(Dataset):
         stft_in = np.swapaxes(stft_in, 0, 1)
 
         mel_and_stft = []
-        input_overlap_per_side = 3
+        input_overlap_per_side = 7
         for element in range(loadedMel.shape[0]):
             if (element > input_overlap_per_side and element < loadedMel.shape[0] - input_overlap_per_side):
                 mel_in_with_overlap = []

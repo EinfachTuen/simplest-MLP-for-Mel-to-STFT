@@ -17,7 +17,7 @@ class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 7 * 80
+        self.model_input_size = 15 * 80
         self.model_output_size = 513
         self.last_loss = 999999
         self.single_dataloader = None
