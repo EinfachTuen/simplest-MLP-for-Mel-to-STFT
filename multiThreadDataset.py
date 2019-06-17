@@ -72,18 +72,29 @@ class AudioDataset(Dataset):
         self.data += mel_and_stft
 
     def loadMelAndStft(self,filename):
-        loadedMel = self.loadMel(filename)
-        wav, sr = librosa.load(filename)
-        stft_in = librosa.stft(wav, n_fft=1024, hop_length=256, win_length=1024)
+        audio = self.readAudio(filename)
+        loadedMel = self.loadMel(audio)
+
+
+       # wav, sr = librosa.load(filename)
+       # stft_in = librosa.stft(wav, n_fft=1024, hop_length=256, win_length=1024)
        # mel_in = librosa.feature.melspectrogram(S=stft_in)
-        stft_in = np.abs(stft_in)
+       # stft_in = np.abs(stft_in)
 
         #mel_in = np.array(mel_in)
+        imag, real, magnitudes = self.getOuput(audio)
+
         loadedMel = np.swapaxes(loadedMel, 0, 1)
-        stft_in = np.swapaxes(stft_in, 0, 1)
+        imag = np.swapaxes(imag[0], 0, 1)
+        real = np.swapaxes(real[0], 0, 1)
+        magnitudes = np.swapaxes(magnitudes[0], 0, 1)
 
         mel_and_stft = []
         input_overlap_per_side = 7
+        imag = np.asarray(imag, dtype=np.float32)
+        real = np.asarray(real, dtype=np.float32)
+        magnitudes = np.asarray(magnitudes, dtype=np.float32)
+
         for element in range(loadedMel.shape[0]):
             if (element > input_overlap_per_side and element < loadedMel.shape[0] - input_overlap_per_side):
                 mel_in_with_overlap = []
@@ -91,20 +102,33 @@ class AudioDataset(Dataset):
                     actual_mel_index = element - input_overlap_per_side + number
                     mel_in_with_overlap.append(loadedMel[actual_mel_index])
                 mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
-                stft_in = np.asarray(stft_in, dtype=np.float32)
-                mel_and_stft.append([mel_in_with_overlap, stft_in[element]])
+                mel_and_stft.append([mel_in_with_overlap, imag[element], real[element], magnitudes[element]])
         return mel_and_stft
 
 # ================================================================================================
 # ================================================================================================
 # ================================================================================================
+    def getOuput(self,audio):
+        stft = TacotronSTFT(filter_length=1024,
+                            hop_length=256,
+                            win_length=1024,
+                            sampling_rate=22050,
+                            mel_fmin=0.0, mel_fmax=8000.0)
+        return  stft.getOutput(audio)
 
-    def loadMel(self, filename):
+    def readAudio(self,filename):
         # Read audio
         audio, sampling_rate = self.load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
             raise ValueError("{} SR doesn't match target {} SR".format(
                 sampling_rate, self.sampling_rate))
+        audio_norm = audio / self.MAX_WAV_VALUE
+        audio_norm = audio_norm.unsqueeze(0)
+        audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
+        return audio_norm
+
+    def loadMel(self, audio):
+
         mel = self.get_mel(audio)
 
        # audio = audio / self.MAX_WAV_VALUE
@@ -119,15 +143,12 @@ class AudioDataset(Dataset):
         return torch.from_numpy(data).float(), sampling_rate
 
     def get_mel(self, audio):
-        audio_norm = audio / self.MAX_WAV_VALUE
-        audio_norm = audio_norm.unsqueeze(0)
-        audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
         stft = TacotronSTFT(filter_length=1024,
                      hop_length=256,
                      win_length=1024,
                      sampling_rate=22050,
                      mel_fmin=0.0, mel_fmax=8000.0)
-        melspec = stft.mel_spectrogram(audio_norm)
+        melspec = stft.mel_spectrogram(audio)
         melspec = torch.squeeze(melspec, 0)
 
         return melspec
