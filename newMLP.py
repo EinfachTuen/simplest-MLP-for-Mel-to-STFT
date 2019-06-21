@@ -17,7 +17,7 @@ class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 15 * 80
+        self.model_input_size = 31 * 80
         self.model_output_size = 513
         self.last_loss = 999999
         self.single_dataloader = None
@@ -25,7 +25,9 @@ class StateClass():
         self.second_hidden_layer_factor = second_hidden_layer_factor
         self.model = LinearRegressionModel(self.model_input_size, self.model_output_size,first_hidden_layer_factor,second_hidden_layer_factor).cuda()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.criterion = nn.MSELoss()
+        self.criterion1 = nn.MSELoss()
+        self.criterion2 = nn.MSELoss()
+        self.criterion3 = nn.MSELoss()
         self.modelname= "MLP-ADAM-MSE-10Hidden"
         self.model_to_load= ""
         self.model_storage =""
@@ -66,37 +68,63 @@ class LinearRegressionModel(nn.Module):
             nn.Linear(hidden_layer_size, hidden_layer_size),
             nn.ReLU(),
             nn.Linear(hidden_layer_size, second_hidden_layer_size),
-            nn.ReLU(),
-            nn.Linear(second_hidden_layer_size, output_dim)
+            nn.ReLU()
         )
+        self.linearImag = nn.Linear(second_hidden_layer_size, output_dim)
+        self.linearReal = nn.Linear(second_hidden_layer_size, output_dim)
+        self.linearMag = nn.Linear(second_hidden_layer_size, output_dim)
+
 
     def forward(self, x):
-        out = self.sequencial(x)
-        return out
+        intermediate = self.sequencial(x)
+        imag = self.linearImag(intermediate)
+        real = self.linearImag(intermediate)
+        mag = self.linearImag(intermediate)
+
+        return imag,real,mag
 
 class Training():
     def __init__(self,state):
         iterations = 0
-        loss_list = []
+        loss_list_imag = []
+        loss_list_real = []
+        loss_list_magnitudes = []
+        loss_list_average = []
         for epoch in range(state.epochs):
-            for i, (mel, stft,) in enumerate(state.single_dataloader):
+            for i, (mel, imag,real,magnitudes) in enumerate(state.single_dataloader):
                 mel = mel.cuda()
-                stft = stft.cuda()
+                imag = imag.cuda()
+                real = real.cuda()
+                magnitudes = magnitudes.cuda()
                 state.optimizer.zero_grad()
-                output_model = state.model(mel)
-                loss = state.criterion(output_model, stft)
+                imag_out,real_out,mag_out = state.model(mel)
+
+                loss1 = state.criterion1(imag_out, imag)
+                loss2 = state.criterion2(real_out, real)
+                loss3 = state.criterion3(mag_out, magnitudes)
+                loss = loss1+loss2+loss3
                 loss.backward()
-                loss_list.append(loss.data.cpu().numpy())
+                loss_list_imag.append(loss1.data.cpu().numpy())
+                loss_list_real.append(loss2.data.cpu().numpy())
+                loss_list_magnitudes.append(loss3.data.cpu().numpy())
+                loss_list_average.append(loss.data.cpu().numpy())
                 state.optimizer.step()
 
-                if(iterations%200 == 0):
-                    loss_np = np.array(loss_list)
-                    average_loss = np.average(loss_np)
-                    print('iteration {}, loss {}'.format(iterations, average_loss))
+                if(iterations%100 == 0):
+                    average_loss_imag = np.average(np.array(loss_list_imag))
+                    average_loss_real = np.average(np.array(loss_list_real))
+
+                    average_loss_magnitudes = np.average(np.array(loss_list_magnitudes))
+                    average_loss = np.average(np.array(loss_list_average))
+                    string ='i {}, imag: {}, real: {}, magnitudes: {}, average: {}'.format(iterations, average_loss_imag, average_loss_real, average_loss_magnitudes,average_loss)
+                    print(string)
                     log_file = open(state.lossfile, 'a')
                     log_file.write(
-                        state.modelname + str(iterations) + "," + "{:.4f}".format(np.average(loss_np)) + ',\n')
-                    loss_list = []
+                        state.modelname + string + ',\n')
+                    loss_list_imag = []
+                    loss_list_real = []
+                    loss_list_magnitudes = []
+                    loss_list_average = []
                     gc.collect()
                 if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
                     print("===> model saved", state.model_storage + state.modelname + str(iterations))

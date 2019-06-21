@@ -23,7 +23,7 @@ class AudioDataset(Dataset):
         self.threads = []
         self.file_number = 0
         self.random = random.Random()
-        self.max_threads = multiprocessing.cpu_count() - 1
+        self.max_threads = multiprocessing.cpu_count() - 3
         self.MAX_WAV_VALUE = 32768.0
         self.sampling_rate = 22050
 
@@ -90,7 +90,7 @@ class AudioDataset(Dataset):
         magnitudes = np.swapaxes(magnitudes[0], 0, 1)
 
         mel_and_stft = []
-        input_overlap_per_side = 7
+        input_overlap_per_side = 15
         imag = np.asarray(imag, dtype=np.float32)
         real = np.asarray(real, dtype=np.float32)
         magnitudes = np.asarray(magnitudes, dtype=np.float32)
