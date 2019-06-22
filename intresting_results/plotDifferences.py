@@ -4,7 +4,7 @@ import pylab as plt
 
 def calculateError(name,original_file,produced_file):
     print("<=============>",name,"<==============>")
-    original_wav, originalsr = librosa.load(original_file)
+    original_wav, originalsr = librosa.load(original_file,duration=10.0)
     original_stft = librosa.stft(original_wav)
 
     produced_wav, produced_sr = librosa.load(produced_file)

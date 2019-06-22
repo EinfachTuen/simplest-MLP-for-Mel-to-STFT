@@ -42,7 +42,7 @@ class StateClass():
         self.data = None
 
     def run_training(self):
-        dataset = AudioDataset(self.training_folder)
+        dataset = AudioDataset(self.training_folder,16000)
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=500,
@@ -108,7 +108,7 @@ class Test():
         self.createAudioFromAudio(state)
 
     def convertFileToMel(self,state):
-        dataset = AudioDataset("")
+        dataset = AudioDataset("",16000)
         fileAsMelAndSTFT = dataset.loadMelAndStft(state.single_file)
         return fileAsMelAndSTFT
 

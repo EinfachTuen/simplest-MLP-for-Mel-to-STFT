@@ -14,7 +14,7 @@ from tacotron2.layers import TacotronSTFT
 import gc
 
 class AudioDataset(Dataset):
-    def __init__(self, training_folder):
+    def __init__(self, training_folder,sr):
         self.training_folder = training_folder
         if training_folder != "":
             self.file_list = os.listdir(training_folder)
@@ -25,7 +25,7 @@ class AudioDataset(Dataset):
         self.random = random.Random()
         self.max_threads = multiprocessing.cpu_count() - 1
         self.MAX_WAV_VALUE = 32768.0
-        self.sampling_rate = 22050
+        self.sampling_rate = sr
 
     def initialize(self):
         for run in range(self.max_threads):
