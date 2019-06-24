@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 import os
 from random import shuffle
 
-from multiThreadDataset import AudioDataset
+from MultiThreadDataset2 import MultiThreadDataset2
 import gc
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 31 * 80
+        self.model_input_size = 7 * 80
         self.model_output_size = 513
         self.last_loss = 999999
         self.single_dataloader = None
@@ -44,7 +44,7 @@ class StateClass():
         self.data = None
 
     def run_training(self):
-        dataset = AudioDataset(self.training_folder)
+        dataset = MultiThreadDataset2('./mels-training/','./output-training/')
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=500,
@@ -136,7 +136,7 @@ class Test():
         self.createAudioFromAudio(state)
 
     def convertFileToMel(self,state):
-        dataset = AudioDataset("")
+        dataset = MultiThreadDataset2("","")
         fileAsMelAndSTFT = dataset.loadMelAndStft(state.single_file)
         return fileAsMelAndSTFT
 
