@@ -8,7 +8,7 @@ import os
 import random
 
 class MultiThreadDataset2(Dataset):
-    def __init__(self, model_input_folder, model_output_folder):
+    def __init__(self, model_input_folder, model_output_folder,threads):
         self.model_input_folder = model_input_folder
         self.model_output_folder = model_output_folder
         self.input_file_list = os.listdir(model_input_folder)
@@ -16,7 +16,7 @@ class MultiThreadDataset2(Dataset):
         self.file_number = 0
 
         self.threads = []
-        self.max_threads = multiprocessing.cpu_count() - 3
+        self.max_threads = threads
         self.data=[]
 
     def initialize(self):

@@ -14,7 +14,7 @@ from MultiThreadDataset2 import MultiThreadDataset2
 import gc
 
 class StateClass():
-    def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder):
+    def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder,threads):
         self.epochs = 100000
         self.learning_rate = 0.001
         self.model_input_size = 7 * 80
@@ -40,11 +40,12 @@ class StateClass():
         self.normalization_test_filename = "normalization_test_audio"
         self.sampling_rate = 22050
         self.lossfile = 'loss_log.txt'
+        self.threads = 1
         self.debug = False
         self.data = None
 
     def run_training(self):
-        dataset = MultiThreadDataset2('./mels-training/','./output-training/')
+        dataset = MultiThreadDataset2('./mels-training/','./output-training/',self.threads)
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=500,
@@ -207,13 +208,14 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--modelCheckpoint', default="")
     parser.add_argument('-h1f','--firstHiddenlayer', default=5,type=int)
     parser.add_argument('-h2f','--secondHiddenlayer', default=5,type=int)
+    parser.add_argument('-ts','--threads', default=1,type=int)
 
     parser.set_defaults(debug=False)
     parser.set_defaults(training=False)
     parser.set_defaults(inference=False)
     args = parser.parse_args()
 
-    state = StateClass(args.firstHiddenlayer,args.secondHiddenlayer,args.trainingFolder)
+    state = StateClass(args.firstHiddenlayer,args.secondHiddenlayer,args.trainingFolder,args.threads)
     print('Model Storage', args.modelStorage)
     state.modelname= args.modelname
     state.single_file= args.single_file
