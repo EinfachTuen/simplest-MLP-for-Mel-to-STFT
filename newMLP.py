@@ -71,17 +71,29 @@ class LinearRegressionModel(nn.Module):
             nn.Linear(hidden_layer_size, second_hidden_layer_size),
             nn.ReLU()
         )
-        self.linearImag = nn.Linear(second_hidden_layer_size, output_dim)
-        self.linearReal = nn.Linear(second_hidden_layer_size, output_dim)
-        self.linearMag = nn.Linear(second_hidden_layer_size, output_dim)
+        self.linearImag = nn.Sequential(
+            nn.Linear(second_hidden_layer_size, output_dim),
+            nn.ReLU(),
+            nn.Linear(output_dim,output_dim)
+        )
 
+        self.linearReal = nn.Sequential(
+            nn.Linear(second_hidden_layer_size, output_dim),
+            nn.ReLU(),
+            nn.Linear(output_dim,output_dim)
+        )
+        self.linearMag = nn.Sequential(
+            nn.Linear(second_hidden_layer_size, output_dim),
+            nn.ReLU(),
+            nn.Linear(output_dim,output_dim)
+        )
 
     def forward(self, x):
         intermediate = self.sequencial(x)
         imag = self.linearImag(intermediate)
-        real = self.linearImag(intermediate)
-        mag = self.linearImag(intermediate)
-
+        real = self.linearReal(intermediate)
+        mag = self.linearMag(intermediate)
+        #
         return imag,real,mag
 
 class Training():
@@ -98,11 +110,13 @@ class Training():
                 real = real.cuda()
                 magnitudes = magnitudes.cuda()
                 state.optimizer.zero_grad()
+                #
                 imag_out,real_out,mag_out = state.model(mel)
 
                 loss1 = state.criterion1(imag_out, imag)
                 loss2 = state.criterion2(real_out, real)
-                loss3 = state.criterion3(mag_out, magnitudes)
+                loss3 = state.criterion1(mag_out, magnitudes)
+                #
                 loss = loss1+loss2+loss3
                 loss.backward()
                 loss_list_imag.append(loss1.data.cpu().numpy())
