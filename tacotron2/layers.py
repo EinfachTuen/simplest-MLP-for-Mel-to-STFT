@@ -75,6 +75,11 @@ class TacotronSTFT(torch.nn.Module):
 
         return self.stft_fn.transform(y)
 
+    def getPhase(self,imag_part,real_part):
+        return self.stft_fn.getPhase(imag_part,real_part)
+
+    def inverse(self,mag,phase):
+        return self.stft_fn.inverse(mag,phase)
 
     def mel_spectrogram(self, y):
         """Computes mel-spectrograms from a batch of waves

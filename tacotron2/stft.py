@@ -99,9 +99,11 @@ class STFT(torch.nn.Module):
         imag_part = forward_transform[:, cutoff:, :]
 
         magnitude = torch.sqrt(real_part**2 + imag_part**2)
-        phase = torch.autograd.Variable(
-            torch.atan2(imag_part.data, real_part.data))
+
         return imag_part, real_part, magnitude
+
+    def getPhase(self,imag_part,real_part):
+        return torch.autograd.Variable(torch.atan2(imag_part.data, real_part.data))
 
     def inverse(self, magnitude, phase):
         recombine_magnitude_phase = torch.cat(

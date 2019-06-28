@@ -1,17 +1,16 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as f
-from torch.autograd import Variable
 import numpy as np
 from torch.utils.data import DataLoader
-import librosa
-import librosa.display
-import matplotlib.pyplot as plt
-import os
-from random import shuffle
+
+from tacotron2.layers import TacotronSTFT
 
 from MultiThreadDataset2 import MultiThreadDataset2
+from STFT_taco_like import STFT_taco_like
+
+from TestDataset import TestDataset
 import gc
+from scipy.io.wavfile import write
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder,threads):
@@ -148,62 +147,43 @@ class Training():
 
 class Test():
     def __init__(self, state):
+        self.dataset = TestDataset(state.single_file)
+        self.dataset.initialize()
         self.createAudioFromAudio(state)
 
-    def convertFileToMel(self,state):
-        dataset = MultiThreadDataset2("","")
-        fileAsMelAndSTFT = dataset.loadMelAndStft(state.single_file)
-        return fileAsMelAndSTFT
-
-    def createAudioFromAudio(self, state):
-        data = self.convertFileToMel(state)
-        state.single_dataloader = DataLoader(data, batch_size=1, shuffle=False)
-        GenerateAudioFromMel.load_and_inference_and_convert(None,state)
+    def createAudioFromAudio(self,state):
+        state.single_dataloader = DataLoader(self.dataset, batch_size=1, shuffle=False)
+        generateAudioFromMel = GenerateAudioFromMel(state)
+        wave = generateAudioFromMel.runModel(state)
+        write('test.wav',22050,wave.numpy())
 
 
 class GenerateAudioFromMel:
-    def load_and_inference_and_convert(self, state):
-        stft_list = []
-        # Normalized STFT For Testing
-        stft_list_for_testing = []
+    def __init__(self, state):
+        print("init")
+        self.stft_converter = STFT_taco_like()
+
+    def runModel(self, state):
         state.model = LinearRegressionModel(state.model_input_size, state.model_output_size,state.first_hidden_layer_factor, state.second_hidden_layer_factor)
-        print("load model", state.model_to_load)
         state.model.load_state_dict(torch.load(state.model_to_load))
         state.model.cuda()
         state.model.eval()
 
-        for i, (mel,stft) in enumerate(state.single_dataloader):
+        imag_list = []
+        real_list = []
+        mag_list = []
+        for i, mel in enumerate(state.single_dataloader):
             mel = mel.cuda()
             #Normalized STFT For Testing
-            stft_list_for_testing.append(stft[0].numpy())
-            stft_part = state.model(mel).cpu().detach().numpy()
-            stft_list.append(stft_part[0])
+            imag,real,mag = state.model(mel)
+            imag_list.append(imag)
+            real_list.append(real)
+            mag_list.append(mag)
 
-        stft_list = np.asarray(stft_list)
-        stft_list = np.swapaxes(stft_list, 0, 1)
-        GenerateAudioFromMel.stft_to_audio(self,state,stft_list,"Result STFT",state.result_filename)
-
-        #After Normalization for Testing
-        stft_list_for_testing = np.swapaxes(stft_list_for_testing, 0, 1)
-        print(stft_list.shape)
-        print(stft_list_for_testing.shape)
-        GenerateAudioFromMel.stft_to_audio(self,state,stft_list_for_testing,"Normalized STFT",state.result_filename)
-
-
-    def stft_to_audio(self,state,stft,diagramm_name,filename):
-        wav = librosa.istft(stft)
-        librosa.output.write_wav(state.modelname+'_'+filename+diagramm_name+".wav",wav,state.sampling_rate)
-        GenerateAudioFromMel.plotSTFT(self,stft,diagramm_name)
-
-
-    def plotSTFT(self,stft,title):
-        plt.figure(figsize=(12, 8))
-        plt.subplot(4, 2, 1)
-        D = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
-        librosa.display.specshow(D, y_axis='linear')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title(title)
-        plt.show()
+        mag_list,phases_res = self.stft_converter.convertToAudio(imag_list,real_list,mag_list)
+        print(mag_list.shape)
+        print(phases_res.shape)
+        return self.stft_converter.inverse_phase(mag_list,phases_res)
 
 
 if __name__ == "__main__":
@@ -215,7 +195,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="actual-Model")
-    parser.add_argument('-sf', '--single_file', default="./reserveWav/LJ001-0001.wav")
+    parser.add_argument('-sf', '--single_file', default="./mels-training/0_LJ001-0018.wav.npy")
     parser.add_argument('-ips', '--iterationsPerSave', default=10000,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
