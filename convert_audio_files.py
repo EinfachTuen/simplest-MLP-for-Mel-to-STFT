@@ -12,7 +12,7 @@ class ConverterClass():
         self.model_output_folder = model_output_folder
 
         #Converter Settings
-        self.overlap = 3
+        self.overlap = 10
         self.sampling_rate = 22050
         self.win_length = 1024
         self.hop_length = 256
@@ -29,12 +29,15 @@ class ConverterClass():
         self.iterate_files()
 
     def iterate_files(self):
+        print('File Number:')
         for i,name in enumerate(self.wav_file_list):
             input_file_path= self.model_input_folder + str(i) + '_' + name + '.npy'
             output_file_path= self.model_output_folder + str(i) + '_' + name + '.npy'
             input, output = self.loadMelAndStft(self.wav_folder + name)
             np.save(input_file_path,input)
             np.save(output_file_path,output)
+            if i%100 == 99:
+                print(i)
 
     def loadMelAndStft(self, filename):
         audio = self.readAudio(filename)

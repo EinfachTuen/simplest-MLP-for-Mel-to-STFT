@@ -11,12 +11,13 @@ from STFT_taco_like import STFT_taco_like
 from TestDataset import TestDataset
 import gc
 from scipy.io.wavfile import write
+import os
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder,threads):
         self.epochs = 100000
         self.learning_rate = 0.001
-        self.model_input_size = 7 * 80
+        self.model_input_size = 21 * 80
         self.model_output_size = 513
         self.last_loss = 999999
         self.single_dataloader = None
@@ -31,6 +32,7 @@ class StateClass():
         self.model_to_load= ""
         self.model_storage =""
         self.single_file = "./inWav/16kLJ001-0001.wav"
+        self.test_folder = "./mels-for-test/"
         self.training_folder= trainingFolder
         self.file_iterations_per_loss = None
         self.iterations_per_save = None
@@ -47,12 +49,13 @@ class StateClass():
         dataset = MultiThreadDataset2('./mels-training/','./output-training/',self.threads)
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
-                                batch_size=500,
-                                shuffle=True,pin_memory=False)
+                                batch_size=1000,
+                                shuffle=False)
         Training(self)
 
     def do_inference(self):
-        Test(self)
+        test = Test(self)
+        test.run_on_whole_folder(self)
 
 class LinearRegressionModel(nn.Module):
     def __init__(self, input_dim, output_dim,first_hidden_layer_factor,second_hidden_layer_factor):
@@ -105,8 +108,9 @@ class Training():
         for epoch in range(state.epochs):
             for i, (mel, imag,real,magnitudes) in enumerate(state.single_dataloader):
                 mel = mel.cuda()
-                imag = imag.cuda()
-                real = real.cuda()
+                imag = imag.cuda().float()
+                real = real.cuda().float()
+
                 magnitudes = magnitudes.cuda()
                 state.optimizer.zero_grad()
                 #
@@ -114,7 +118,7 @@ class Training():
 
                 loss1 = state.criterion1(imag_out, imag)
                 loss2 = state.criterion2(real_out, real)
-                loss3 = state.criterion1(mag_out, magnitudes)
+                loss3 = state.criterion3(mag_out, magnitudes)
                 #
                 loss = loss1+loss2+loss3
                 loss.backward()
@@ -149,26 +153,35 @@ class Test():
     def __init__(self, state):
         self.dataset = TestDataset(state.single_file)
         self.dataset.initialize()
-        self.createAudioFromAudio(state)
+        self.test_output_folder = "./test-result-wav/"
+        self.generateAudioFromMel = GenerateAudioFromMel(state)
 
-    def createAudioFromAudio(self,state):
+    def run_on_whole_folder(self,state):
+        file_list = os.listdir(state.test_folder)
+        for i, file_name in enumerate(file_list):
+            file = state.test_folder + file_name
+            self.dataset = TestDataset(file)
+            self.dataset.initialize()
+            self.createAudioFromAudio(state, file_name)
+
+    def createAudioFromAudio(self,state,file_name):
         state.single_dataloader = DataLoader(self.dataset, batch_size=1, shuffle=False)
-        generateAudioFromMel = GenerateAudioFromMel(state)
-        wave = generateAudioFromMel.runModel(state)
-        write('test.wav',22050,wave.numpy())
+        wave = self.generateAudioFromMel.runModel(state)
+        write(self.test_output_folder+file_name,22050,wave.numpy())
 
 
 class GenerateAudioFromMel:
     def __init__(self, state):
         print("init")
         self.stft_converter = STFT_taco_like()
-
-    def runModel(self, state):
-        state.model = LinearRegressionModel(state.model_input_size, state.model_output_size,state.first_hidden_layer_factor, state.second_hidden_layer_factor)
+        state.model = LinearRegressionModel(state.model_input_size, state.model_output_size,
+                                        state.first_hidden_layer_factor, state.second_hidden_layer_factor)
         state.model.load_state_dict(torch.load(state.model_to_load))
         state.model.cuda()
         state.model.eval()
 
+
+    def runModel(self, state):
         imag_list = []
         real_list = []
         mag_list = []
@@ -195,7 +208,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--inference', dest='inference', action='store_true')
     parser.add_argument('-tf', '--trainingFolder', default="./inWav/")
     parser.add_argument('-m', '--modelname', default="actual-Model")
-    parser.add_argument('-sf', '--single_file', default="./mels-training/0_LJ001-0018.wav.npy")
+    parser.add_argument('-sf', '--single_file', default="./mels-training/0_LJ001-0001.wav.npy")
     parser.add_argument('-ips', '--iterationsPerSave', default=10000,type=int)
     parser.add_argument('-lr', '--learningRate', default=0.001,type=float)
     parser.add_argument('-ms', '--modelStorage', default="")
@@ -203,6 +216,7 @@ if __name__ == "__main__":
     parser.add_argument('-h1f','--firstHiddenlayer', default=5,type=int)
     parser.add_argument('-h2f','--secondHiddenlayer', default=5,type=int)
     parser.add_argument('-ts','--threads', default=1,type=int)
+    parser.add_argument('-ti', '--test_input_folder', default="./mels-training/")
 
     parser.set_defaults(debug=False)
     parser.set_defaults(training=False)
@@ -218,6 +232,8 @@ if __name__ == "__main__":
     state.lossfile= "loss_"+args.modelname+".txt"
     state.model_storage= args.modelStorage
     state.debug= args.debug
+    state.test_folder = args.test_input_folder
+
     if args.modelCheckpoint != "":
         if args.training:
             state.model.load_state_dict(torch.load(args.modelCheckpoint))
