@@ -18,7 +18,7 @@ class StateClass():
         self.epochs = 100000
         self.learning_rate = 0.001
         self.model_input_size = 21 * 80
-        self.model_output_size = 513
+        self.model_output_size = 256
         self.last_loss = 999999
         self.single_dataloader = None
         self.first_hidden_layer_factor = first_hidden_layer_factor
@@ -31,7 +31,7 @@ class StateClass():
         self.modelname= "MLP-ADAM-MSE-10Hidden"
         self.model_to_load= ""
         self.model_storage =""
-        self.single_file = "./inWav/16kLJ001-0001.wav"
+        self.single_file = "./inWav/LJ001-0001.wav"
         self.test_folder = "./mels-for-test/"
         self.training_folder= trainingFolder
         self.file_iterations_per_loss = None
@@ -46,11 +46,11 @@ class StateClass():
         self.data = None
 
     def run_training(self):
-        dataset = MultiThreadDataset2('./mels-training/','./output-training/',self.threads)
+        dataset = MultiThreadDataset2('./mels-training2/','./output-training2/',self.threads)
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=1000,
-                                shuffle=False)
+                                shuffle=True)
         Training(self)
 
     def do_inference(self):
@@ -70,79 +70,48 @@ class LinearRegressionModel(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_layer_size, hidden_layer_size),
             nn.ReLU(),
-            nn.Linear(hidden_layer_size, second_hidden_layer_size),
-            nn.ReLU()
-        )
-        self.linearImag = nn.Sequential(
             nn.Linear(second_hidden_layer_size, output_dim),
             nn.ReLU(),
-            nn.Linear(output_dim,output_dim)
-        )
-
-        self.linearReal = nn.Sequential(
-            nn.Linear(second_hidden_layer_size, output_dim),
+            nn.Linear(output_dim, output_dim),
             nn.ReLU(),
-            nn.Linear(output_dim,output_dim)
-        )
-        self.linearMag = nn.Sequential(
-            nn.Linear(second_hidden_layer_size, output_dim),
+            nn.Linear(output_dim, output_dim),
             nn.ReLU(),
-            nn.Linear(output_dim,output_dim)
+            nn.Linear(output_dim, output_dim),
+            nn.ReLU(),
+            nn.Linear(output_dim, output_dim),
+            nn.ReLU(),
+            nn.Linear(output_dim, output_dim),
+            nn.ReLU(),
+            nn.Linear(output_dim, output_dim)
         )
 
     def forward(self, x):
-        intermediate = self.sequencial(x)
-        imag = self.linearImag(intermediate)
-        real = self.linearReal(intermediate)
-        mag = self.linearMag(intermediate)
-        #
-        return imag,real,mag
+        return self.sequencial(x)
 
 class Training():
     def __init__(self,state):
         iterations = 0
-        loss_list_imag = []
-        loss_list_real = []
-        loss_list_magnitudes = []
-        loss_list_average = []
+        loss_list = []
         for epoch in range(state.epochs):
-            for i, (mel, imag,real,magnitudes) in enumerate(state.single_dataloader):
+            for i, (mel, audio) in enumerate(state.single_dataloader):
                 mel = mel.cuda()
-                imag = imag.cuda().float()
-                real = real.cuda().float()
+                audio = audio.cuda().float()
 
-                magnitudes = magnitudes.cuda()
                 state.optimizer.zero_grad()
-                #
-                imag_out,real_out,mag_out = state.model(mel)
+                audio_out = state.model(mel)
 
-                loss1 = state.criterion1(imag_out, imag)
-                loss2 = state.criterion2(real_out, real)
-                loss3 = state.criterion3(mag_out, magnitudes)
-                #
-                loss = loss1+loss2+loss3
+                loss = state.criterion1(audio_out, audio)
                 loss.backward()
-                loss_list_imag.append(loss1.data.cpu().numpy())
-                loss_list_real.append(loss2.data.cpu().numpy())
-                loss_list_magnitudes.append(loss3.data.cpu().numpy())
-                loss_list_average.append(loss.data.cpu().numpy())
+                loss_list.append(loss.data.cpu().numpy())
                 state.optimizer.step()
 
                 if(iterations%100 == 0):
-                    average_loss_imag = np.average(np.array(loss_list_imag))
-                    average_loss_real = np.average(np.array(loss_list_real))
-
-                    average_loss_magnitudes = np.average(np.array(loss_list_magnitudes))
-                    average_loss = np.average(np.array(loss_list_average))
-                    string ='i {}, imag: {}, real: {}, magnitudes: {}, average: {}'.format(iterations, average_loss_imag, average_loss_real, average_loss_magnitudes,average_loss)
+                    average_loss = np.average(np.array(loss_list))
+                    string ='i {}, average: {}'.format(iterations, average_loss)
                     print(string)
                     log_file = open(state.lossfile, 'a')
                     log_file.write(
                         state.modelname + string + ',\n')
-                    loss_list_imag = []
-                    loss_list_real = []
-                    loss_list_magnitudes = []
-                    loss_list_average = []
                     gc.collect()
                 if (iterations % state.iterations_per_save) == (state.iterations_per_save - 1):
                     print("===> model saved", state.model_storage + state.modelname + str(iterations))
@@ -167,7 +136,8 @@ class Test():
     def createAudioFromAudio(self,state,file_name):
         state.single_dataloader = DataLoader(self.dataset, batch_size=1, shuffle=False)
         wave = self.generateAudioFromMel.runModel(state)
-        write(self.test_output_folder+file_name,22050,wave.numpy())
+        wave = np.asarray(wave)
+        write(self.test_output_folder+file_name,22050,wave)
 
 
 class GenerateAudioFromMel:
@@ -182,21 +152,13 @@ class GenerateAudioFromMel:
 
 
     def runModel(self, state):
-        imag_list = []
-        real_list = []
-        mag_list = []
+        audio_list = []
         for i, mel in enumerate(state.single_dataloader):
             mel = mel.cuda()
             #Normalized STFT For Testing
-            imag,real,mag = state.model(mel)
-            imag_list.append(imag)
-            real_list.append(real)
-            mag_list.append(mag)
-
-        mag_list,phases_res = self.stft_converter.convertToAudio(imag_list,real_list,mag_list)
-        print(mag_list.shape)
-        print(phases_res.shape)
-        return self.stft_converter.inverse_phase(mag_list,phases_res)
+            audio = state.model(mel)
+            audio_list.append(audio.cpu().detach().numpy())
+        return audio_list
 
 
 if __name__ == "__main__":
@@ -216,7 +178,7 @@ if __name__ == "__main__":
     parser.add_argument('-h1f','--firstHiddenlayer', default=5,type=int)
     parser.add_argument('-h2f','--secondHiddenlayer', default=5,type=int)
     parser.add_argument('-ts','--threads', default=1,type=int)
-    parser.add_argument('-ti', '--test_input_folder', default="./mels-training/")
+    parser.add_argument('-ti', '--test_input_folder', default="./mels-training2/")
 
     parser.set_defaults(debug=False)
     parser.set_defaults(training=False)

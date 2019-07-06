@@ -40,21 +40,19 @@ class ConverterClass():
                 print(i)
 
     def loadMelAndStft(self, filename):
-        audio = self.readAudio(filename)
-        loadedMel = self.loadMel(audio)
-        imag, real, magnitudes = self.stft.getOutput(audio)
-        return self.convert_input_output(loadedMel, imag, real, magnitudes)
+        audio_norm,audio = self.readAudio(filename)
+        loadedMel = self.loadMel(audio_norm)
+        audio_chunks = []
+        position = 0
+        for element in range(loadedMel.shape[1]):
+            position_end = position+ self.hop_length
+            audio_chunks.append(audio[position:position_end].numpy())
+            position = position_end
+        return self.convert_input_output(loadedMel,audio_chunks)
 
-    def convert_input_output(self,loadedMel,imag,real,magnitudes):
+    def convert_input_output(self,loadedMel,audio_chunks):
         loadedMel = np.swapaxes(loadedMel, 0, 1)
-        imag = np.swapaxes(imag[0], 0, 1)
-        real = np.swapaxes(real[0], 0, 1)
-        magnitudes = np.swapaxes(magnitudes[0], 0, 1)
 
-
-        imag = np.asarray(imag, dtype=np.float32)
-        real = np.asarray(real, dtype=np.float32)
-        magnitudes = np.asarray(magnitudes, dtype=np.float32)
         input_mels_with_overlap = []
         output = []
 
@@ -66,19 +64,19 @@ class ConverterClass():
                     mel_in_with_overlap.append(loadedMel[actual_mel_index])
                 mel_in_with_overlap = np.asarray(mel_in_with_overlap, dtype=np.float32).flatten()
                 input_mels_with_overlap.append(mel_in_with_overlap)
-                output.append([imag[element], real[element], magnitudes[element]])
+                output.append(audio_chunks[element])
         return input_mels_with_overlap,output
 
     def readAudio(self, filename):
         # Read audio
         audio, sampling_rate = self.load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
-            raise ValueError("{} SR doesn't match target {} SR".format(
-                sampling_rate, self.sampling_rate))
+             raise ValueError("{} SR doesn't match target {} SR".format(
+                 sampling_rate, self.sampling_rate))
         audio_norm = audio / self.MAX_WAV_VALUE
         audio_norm = audio_norm.unsqueeze(0)
         audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
-        return audio_norm
+        return audio_norm, audio
 
     def loadMel(self, audio):
         mel = self.get_mel(audio)
@@ -97,9 +95,9 @@ class ConverterClass():
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-wf', '--wav_folder', default="./inWav/")
-    parser.add_argument('-mel', '--model_input_folder', default="./mels-training/")
-    parser.add_argument('-o', '--model_output_folder', default="./output-training/")
+    parser.add_argument('-wf', '--wav_folder', default="./inWav2/")
+    parser.add_argument('-mel', '--model_input_folder', default="./mels-training2/")
+    parser.add_argument('-o', '--model_output_folder', default="./output-training2/")
 
     args = parser.parse_args()
 

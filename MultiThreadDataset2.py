@@ -29,7 +29,7 @@ class MultiThreadDataset2(Dataset):
         input, output = self.load_files(file_number)
         #print('in',input)
         for i,mel in enumerate(input):
-            self.data.append([mel,output[i][0],output[i][1],output[i][2]])
+            self.data.append([mel,output[i]])
             if(len(self.data) > 150000):
              del self.data[0: 1]
 
