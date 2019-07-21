@@ -97,9 +97,9 @@ class ConverterClass():
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-wf', '--wav_folder', default="./inWav/")
-    parser.add_argument('-mel', '--model_input_folder', default="./mels-training/")
-    parser.add_argument('-o', '--model_output_folder', default="./output-training/")
+    parser.add_argument('-wf', '--wav_folder', default="./inWav2/")
+    parser.add_argument('-mel', '--model_input_folder', default="./mels-training2/")
+    parser.add_argument('-o', '--model_output_folder', default="./output-training2/")
 
     args = parser.parse_args()
 

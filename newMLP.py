@@ -46,7 +46,7 @@ class StateClass():
         self.data = None
 
     def run_training(self):
-        dataset = MultiThreadDataset2('./mels-training/','./output-training/',self.threads)
+        dataset = MultiThreadDataset2('./mels-training2/','./output-training2/',self.threads)
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=1000,
