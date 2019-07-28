@@ -50,7 +50,7 @@ class StateClass():
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=1000,
-                                shuffle=True)
+                                shuffle=False)
         Training(self)
 
     def do_inference(self):
