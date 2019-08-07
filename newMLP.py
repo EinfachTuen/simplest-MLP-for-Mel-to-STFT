@@ -4,7 +4,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 from tacotron2.layers import TacotronSTFT
-
+from LinearRegressionModel import LinearRegressionModel
 from MultiThreadDataset2 import MultiThreadDataset2
 from STFT_taco_like import STFT_taco_like
 
@@ -50,53 +50,14 @@ class StateClass():
         dataset.initialize()
         self.single_dataloader = DataLoader(dataset,
                                 batch_size=1000,
-                                shuffle=False)
+                                shuffle=True)
         Training(self)
 
     def do_inference(self):
         test = Test(self)
         test.run_on_whole_folder(self)
 
-class LinearRegressionModel(nn.Module):
-    def __init__(self, input_dim, output_dim,first_hidden_layer_factor,second_hidden_layer_factor):
-        super(LinearRegressionModel, self).__init__()
-        print("input_dim", input_dim)
-        print("output_dim", output_dim)
-        hidden_layer_size = input_dim * first_hidden_layer_factor
-        second_hidden_layer_size = input_dim * second_hidden_layer_factor
 
-        self.sequencial =nn.Sequential(
-            nn.Linear(input_dim, hidden_layer_size),
-            nn.ReLU(),
-            nn.Linear(hidden_layer_size, hidden_layer_size),
-            nn.ReLU(),
-            nn.Linear(hidden_layer_size, second_hidden_layer_size),
-            nn.ReLU()
-        )
-        self.linearImag = nn.Sequential(
-            nn.Linear(second_hidden_layer_size, output_dim),
-            nn.ReLU(),
-            nn.Linear(output_dim,output_dim)
-        )
-
-        self.linearReal = nn.Sequential(
-            nn.Linear(second_hidden_layer_size, output_dim),
-            nn.ReLU(),
-            nn.Linear(output_dim,output_dim)
-        )
-        self.linearMag = nn.Sequential(
-            nn.Linear(second_hidden_layer_size, output_dim),
-            nn.ReLU(),
-            nn.Linear(output_dim,output_dim)
-        )
-
-    def forward(self, x):
-        intermediate = self.sequencial(x)
-        imag = self.linearImag(intermediate)
-        real = self.linearReal(intermediate)
-        mag = self.linearMag(intermediate)
-        #
-        return imag,real,mag
 
 class Training():
     def __init__(self,state):
