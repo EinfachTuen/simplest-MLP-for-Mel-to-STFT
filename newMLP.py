@@ -177,7 +177,7 @@ if __name__ == "__main__":
     parser.add_argument('-h1f','--firstHiddenlayer', default=5,type=int)
     parser.add_argument('-h2f','--secondHiddenlayer', default=5,type=int)
     parser.add_argument('-ts','--threads', default=1,type=int)
-    parser.add_argument('-ti', '--test_input_folder', default="./mels-training/")
+    parser.add_argument('-ti', '--test_input_folder', default="./mels-training2/")
 
     parser.set_defaults(debug=False)
     parser.set_defaults(training=False)
