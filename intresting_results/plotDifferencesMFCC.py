@@ -3,12 +3,12 @@ import librosa.display
 import numpy as np
 import pylab as plt
 import os
-
+from dtw import dtw
 
 def calculateError(name,original_file,produced_file,result_name):
     newFileString = "<=============>"+name+"<==============>"
     printToResultFile(newFileString, result_name)
-    original_wav, originalsr = librosa.load(original_file)
+    original_wav, original_sr = librosa.load(original_file)
     produced_wav, produced_sr = librosa.load(produced_file)
 
     if len(original_wav) < len(produced_wav):
@@ -17,33 +17,13 @@ def calculateError(name,original_file,produced_file,result_name):
     if len(produced_wav) < len(original_wav):
         original_wav = original_wav[0:len(produced_wav)]
 
-    original_stft = librosa.stft(original_wav)
-    produced_stft = librosa.stft(produced_wav)
-    pltPrint(original_stft,"original_stft")
-    pltPrint(produced_stft,"produced_stft")
-    if original_stft.shape[1] > produced_stft.shape[1]:
-        original_stft = original_stft[:,4:-3]
-
-    errorMatrix = original_stft - produced_stft
-    errorAbsMatrix = np.abs(errorMatrix)
-    correlation = np.corrcoef(original_stft,produced_stft)
-    print(correlation)
-    absoluteError = np.sum(errorAbsMatrix)
-    absoluteErrorString = "Absolute Error = "+ str(absoluteError)
-    printToResultFile(absoluteErrorString,result_name)
-
-    meanError = np.mean(errorAbsMatrix)
-    meanErrorString = "Mean Error = "+ str(meanError)
-    printToResultFile(meanErrorString,result_name)
-    plt.imshow(np.abs(errorAbsMatrix))
-    yString =name," Absolute Error:",absoluteError," Mean Error:",meanError
-    plt.xlabel(yString)
-    joinFilename= original_file.replace(".", "-")
-    joinFilename= joinFilename.replace("/", "-")
-    plt.ylim(0,errorAbsMatrix.shape[0])
-    plt.savefig(result_name+'/'+joinFilename+'.png')
-    plt.show()
-    return absoluteError,meanError
+    original_mfcc = librosa.feature.mfcc(original_wav, original_sr, n_mfcc=13)
+    produced_mfcc = librosa.feature.mfcc(produced_wav, original_sr, n_mfcc=13)
+    d, _, _, _ = dtw(original_mfcc, produced_mfcc, dist=lambda x, y: np.linalg.norm(original_mfcc - produced_mfcc, ord=1))
+    pltPrint(original_mfcc,"original_stft")
+    pltPrint(produced_mfcc,"produced_stft")
+    printToResultFile(str(d),result_name)
+    return d,0
 
 def pltPrint(spectrum,name):
     plt.imshow(np.abs(spectrum))
@@ -72,7 +52,7 @@ def calculateErrorForFile(model_wavs_folder,original_wavs_folder,result_name):
 def printToResultFile(string,result_name):
     print(string)
     string = string +'\n'
-    log_file = open(result_name+'/result.txt', 'a')
+    log_file = open(result_name+'/resultCorrelation.txt', 'a')
     log_file.write(string)
 
 def printSummedResults(result_name, absError,meanError):

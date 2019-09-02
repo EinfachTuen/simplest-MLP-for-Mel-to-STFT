@@ -3,7 +3,7 @@ import librosa.display
 import numpy as np
 import pylab as plt
 import os
-
+from dtw import dtw
 
 def calculateError(name,original_file,produced_file,result_name):
     newFileString = "<=============>"+name+"<==============>"
@@ -17,33 +17,33 @@ def calculateError(name,original_file,produced_file,result_name):
     if len(produced_wav) < len(original_wav):
         original_wav = original_wav[0:len(produced_wav)]
 
-    original_stft = librosa.stft(original_wav)
-    produced_stft = librosa.stft(produced_wav)
-    pltPrint(original_stft,"original_stft")
-    pltPrint(produced_stft,"produced_stft")
-    if original_stft.shape[1] > produced_stft.shape[1]:
-        original_stft = original_stft[:,4:-3]
-
-    errorMatrix = original_stft - produced_stft
-    errorAbsMatrix = np.abs(errorMatrix)
-    correlation = np.corrcoef(original_stft,produced_stft)
+    original_stft = np.abs(librosa.stft(original_wav))
+    produced_stft = np.abs(librosa.stft(produced_wav))
+    #pltPrint(original_stft,"original_stft")
+    #pltPrint(produced_stft,"produced_stft")
+    #if original_stft.shape[1] > produced_stft.shape[1]:
+   #    original_stft = original_stft[:,4:-3]
+    #euclidean_norm =lambda x, y: np.linalg.norm(original_stft - produced_stft, ord=1)
+    #dist, cost, path = dtw(original_stft, produced_stft, dist=euclidean_norm)
+    correlation = np.corrcoef(original_stft, produced_stft)
+    correlationAbsMatrix = np.abs(correlation)
     print(correlation)
-    absoluteError = np.sum(errorAbsMatrix)
-    absoluteErrorString = "Absolute Error = "+ str(absoluteError)
-    printToResultFile(absoluteErrorString,result_name)
+    absoluteCorrelation = np.sum(correlationAbsMatrix)
+    absoluteCorrelationString = "Absolute Error = "+ str(absoluteCorrelation)
+    printToResultFile(absoluteCorrelationString,result_name)
 
-    meanError = np.mean(errorAbsMatrix)
-    meanErrorString = "Mean Error = "+ str(meanError)
-    printToResultFile(meanErrorString,result_name)
-    plt.imshow(np.abs(errorAbsMatrix))
-    yString =name," Absolute Error:",absoluteError," Mean Error:",meanError
-    plt.xlabel(yString)
+    meanCorrelation = np.mean(correlationAbsMatrix)
+    meanCorrelationString = "Mean Error = "+ str(meanCorrelation)
+    printToResultFile(meanCorrelationString,result_name)
+    # plt.imshow(np.abs(correlationAbsMatrix))
+    yString =name," Correlation:",absoluteCorrelation," Mean Error:",meanCorrelation
+    #plt.xlabel(yString)
     joinFilename= original_file.replace(".", "-")
     joinFilename= joinFilename.replace("/", "-")
-    plt.ylim(0,errorAbsMatrix.shape[0])
-    plt.savefig(result_name+'/'+joinFilename+'.png')
-    plt.show()
-    return absoluteError,meanError
+    # plt.ylim(0,correlationAbsMatrix.shape[0])
+    # plt.savefig(result_name+'/'+joinFilename+'.png')
+    # plt.show()
+    return absoluteCorrelation,meanCorrelation
 
 def pltPrint(spectrum,name):
     plt.imshow(np.abs(spectrum))
@@ -72,7 +72,7 @@ def calculateErrorForFile(model_wavs_folder,original_wavs_folder,result_name):
 def printToResultFile(string,result_name):
     print(string)
     string = string +'\n'
-    log_file = open(result_name+'/result.txt', 'a')
+    log_file = open(result_name+'/resultCorrelation.txt', 'a')
     log_file.write(string)
 
 def printSummedResults(result_name, absError,meanError):

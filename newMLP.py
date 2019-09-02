@@ -12,6 +12,7 @@ from TestDataset import TestDataset
 import gc
 from scipy.io.wavfile import write
 import os
+from datetime import datetime
 
 class StateClass():
     def __init__(self,first_hidden_layer_factor,second_hidden_layer_factor,trainingFolder,threads):
@@ -95,7 +96,8 @@ class Training():
 
                     average_loss_magnitudes = np.average(np.array(loss_list_magnitudes))
                     average_loss = np.average(np.array(loss_list_average))
-                    string ='i {}, imag: {}, real: {}, magnitudes: {}, average: {}'.format(iterations, average_loss_imag, average_loss_real, average_loss_magnitudes,average_loss)
+                    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    string ='i {}, time: {}, imag: {}, real: {}, magnitudes: {}, average: {}'.format(iterations,now, average_loss_imag, average_loss_real, average_loss_magnitudes,average_loss)
                     print(string)
                     log_file = open(state.lossfile, 'a')
                     log_file.write(
